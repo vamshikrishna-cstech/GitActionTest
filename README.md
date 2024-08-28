@@ -1,2 +1,0 @@
-# GitActionTest
-Selenium with cucumber
