@@ -15,14 +15,7 @@
     </properties>
 
     <dependencies>
-        <!-- Force the specific version of io.cucumber:messages -->
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>messages</artifactId>
-            <version>24.1.0</version>
-        </dependency>
-
-        <!-- Cucumber -->
+        <!-- Cucumber Dependencies -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
@@ -34,7 +27,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit</artifactId>
@@ -46,6 +38,11 @@
                     <artifactId>messages</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>gherkin</artifactId>
+            <version>24.0.0</version>
         </dependency>
 
         <!-- Selenium -->
@@ -101,12 +98,6 @@
             <artifactId>allure-cucumber7-jvm</artifactId>
             <version>2.18.1</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.cucumber</groupId>
-                    <artifactId>messages</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
@@ -130,7 +121,7 @@
                 <version>3.1.2</version>
                 <configuration>
                     <includes>
-                        <include>**/Testrunner.java</include> <!-- Ensure the path matches your test runner -->
+                        <include>**/*Test.java</include> <!-- Ensure it includes all test classes -->
                     </includes>
                     <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
@@ -144,14 +135,14 @@
                 <executions>
                     <execution>
                         <id>allure-report</id>
-                        <phase>test</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <skip>true</skip> <!-- Skip Allure in the local profile -->
+                    <skip>${env} == local</skip> <!-- Skip Allure in the local profile -->
                 </configuration>
             </plugin>
         </plugins>
