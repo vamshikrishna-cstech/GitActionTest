@@ -26,10 +26,24 @@ jobs:
       run: mvn install
 
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports.html --glue Stepdefinition"
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition"
 
-    - name: Upload Cucumber Report
+    # Debug step: List files in the target directory
+    - name: List target directory files
+      run: ls -R target
+
+    # Upload Surefire reports
+    - name: Upload Surefire Reports
+      if: success()
       uses: actions/upload-artifact@v3
       with:
-        name: cucumber-report
-        path: target/cucumber-reports.html
+        name: surefire-reports
+        path: target/surefire-reports/*
+
+    # Upload Cucumber reports
+    - name: Upload Cucumber Reports
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: cucumber-reports
+        path: target/cucumber-reports/*
