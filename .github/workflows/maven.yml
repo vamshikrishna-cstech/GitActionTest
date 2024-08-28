@@ -25,8 +25,8 @@ jobs:
     - name: Install dependencies
       run: mvn install
 
-    - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition"
+    - name: Run Cucumber Tests with Allure
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition" -Denv=ci
 
     # Debug step: List files in the target directory
     - name: List target directory files
@@ -47,3 +47,15 @@ jobs:
       with:
         name: cucumber-reports
         path: target/cucumber-reports/*
+
+    # Generate and Upload Allure Reports
+    - name: Generate Allure Report
+      if: success()
+      run: mvn allure:report -Denv=ci
+
+    - name: Upload Allure Report
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report
+        path: target/site/allure-maven-plugin/*
