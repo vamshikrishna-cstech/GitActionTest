@@ -22,16 +22,14 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-    - name: Cache Maven repository
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-
     - name: Install dependencies
       run: mvn install
 
     - name: Run Cucumber Tests
-      run: mvn clean test -Dcucumber.options="src/test/resources/features --plugin pretty --glue Stepdefinition"
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports.html --glue Stepdefinition"
+
+    - name: Upload Cucumber Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: cucumber-report
+        path: target/cucumber-reports.html
