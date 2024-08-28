@@ -22,11 +22,21 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-    - name: Install dependencies
-      run: mvn install
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
-    - name: Run Cucumber Tests with Allure
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition" -Denv=ci
+    - name: Clean and install dependencies
+      run: |
+        mvn clean
+        mvn install -DskipTests
+
+    - name: Run Cucumber Tests
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition"
 
     # Debug step: List files in the target directory
     - name: List target directory files
@@ -51,7 +61,7 @@ jobs:
     # Generate and Upload Allure Reports
     - name: Generate Allure Report
       if: success()
-      run: mvn allure:report -Denv=ci
+      run: mvn allure:report
 
     - name: Upload Allure Report
       if: success()
