@@ -39,7 +39,7 @@ jobs:
     # Upload Surefire reports
     - name: Upload Surefire Reports
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: surefire-reports
         path: target/surefire-reports/*
@@ -47,7 +47,7 @@ jobs:
     # Upload Cucumber reports
     - name: Upload Cucumber Reports
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cucumber-reports
         path: target/cucumber-reports/*

@@ -6,9 +6,15 @@ import io.cucumber.junit.Cucumber;
 import io.cucumber.junit.CucumberOptions;
 
 @RunWith(Cucumber.class)
-@CucumberOptions(features = "src/test/resources/features/Login.feature", glue = {
-        "stepdefinition" }, monochrome = true, plugin = {
-                "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" })
+@CucumberOptions(
+    features = "src/test/resources/features/Login.feature",
+    glue = "stepdefinition",
+    monochrome = true,
+    plugin = {
+        "pretty", // Optional, adds more readable output in the console
+        "tech.grasshopper.extentreports.cucumber.adapter.ExtentCucumberAdapter:" // Generates the Extent report
+    }
+)
 public class Testrunner {
 
 }
