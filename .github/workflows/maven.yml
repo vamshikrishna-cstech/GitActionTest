@@ -30,24 +30,16 @@ jobs:
       run: mvn install
 
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin pretty --plugin html:target/cucumber-reports/cucumber-reports.html --glue Stepdefinition"
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
 
     # Debug step: List files in the target directory
     - name: List target directory files
       run: ls -R target
 
-    # Upload Surefire reports
-    - name: Upload Surefire Reports
+    # Upload Extent Reports
+    - name: Upload Extent Reports
       if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: surefire-reports
-        path: target/surefire-reports/*
-
-    # Upload Cucumber reports
-    - name: Upload Cucumber Reports
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cucumber-reports
-        path: target/cucumber-reports/*
+        name: extent-reports
+        path: target/extent-reports/*
