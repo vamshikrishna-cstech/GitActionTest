@@ -26,11 +26,13 @@ jobs:
     - name: Clean the project
       run: mvn clean
 
+    # Install dependencies without running tests
     - name: Install dependencies
-      run: mvn install
+      run: mvn install -DskipTests
 
+    # Run Cucumber tests separately
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     # Debug step: List files in the target directory
     - name: List target directory files
