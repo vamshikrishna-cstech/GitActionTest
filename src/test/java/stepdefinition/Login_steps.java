@@ -14,8 +14,9 @@ public class Login_steps {
 	Login_page lp;
 
 	@Given("user launches the url")
-	public void user_launches_the_url() {
+	public void user_launches_the_url() throws InterruptedException {
 		lp = new Login_page(driver);
+		Thread.sleep(3000);
 		lp.homepageloginbtn();
 	}
 

@@ -29,7 +29,8 @@ public class Browser {
 			// Headless mode specific options
 			options.addArguments("--headless");
 			options.addArguments("--disable-gpu"); // Recommended for headless mode
-			options.addArguments("--window-size=1920x1080"); // Optional: Set window size
+			//options.addArguments("--window-size=1920x1080"); // Optional: Set window size
+			options.addArguments("start-maximized");
 		} else {
 			// Options for head-full mode
 			options.addArguments("start-maximized");
