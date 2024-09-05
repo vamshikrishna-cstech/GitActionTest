@@ -22,23 +22,20 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-    # Step to clean the project
     - name: Clean the project
       run: mvn clean
 
-    # Install dependencies without running tests
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    # Run Cucumber tests separately
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
+      env:
+        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 
-    # Debug step: List files in the target directory
     - name: List target directory files
       run: ls -R target
 
-    # Upload Extent Reports
     - name: Upload Extent Reports
       if: success()
       uses: actions/upload-artifact@v4
