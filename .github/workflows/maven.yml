@@ -7,13 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      run_smoke_tests:
-        description: 'Set to true to run only smoke tests'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -29,6 +22,7 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    # Step to clean the project
     - name: Clean the project
       run: mvn clean
 
@@ -36,16 +30,13 @@ jobs:
       run: mvn install
 
     - name: Run Cucumber Tests
-      run: |
-        if [ "${{ github.event.inputs.run_smoke_tests }}" == "true" ]; then
-          mvn test -Dcucumber.options="--tags @SmokeTest --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        else
-          mvn test -Dcucumber.options="--plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        fi
+      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
 
+    # Debug step: List files in the target directory
     - name: List target directory files
       run: ls -R target
 
+    # Upload Extent Reports
     - name: Upload Extent Reports
       if: success()
       uses: actions/upload-artifact@v4

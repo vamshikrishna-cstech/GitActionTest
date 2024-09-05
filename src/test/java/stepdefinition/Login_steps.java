@@ -21,6 +21,7 @@ public class Login_steps {
 
 	@When("user enters {string} and {string}")
 	public void user_enters_and(String username, String password) throws Throwable {
+		Thread.sleep(3000);
 		lp.userentersusername(username);
 		lp.userenterspassword(password);
 		
