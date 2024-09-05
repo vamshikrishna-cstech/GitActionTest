@@ -26,7 +26,7 @@ jobs:
       run: mvn clean
 
     - name: Install dependencies
-      run: mvn install -DskipTests
+      run: mvn install
 
     - name: Run Cucumber Tests
       run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
