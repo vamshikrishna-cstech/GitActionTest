@@ -1,0 +1,16 @@
+Feature: Activity Planner
+
+  Background: User logged into the application
+    Given user launches the url
+    When user enters "krishna4360@gmail.com" and "Pass@123"
+    Then user tries to logged into the application
+    Then user will click on Reports Feature
+@SmokeTest
+  Scenario Outline: User will tries to add Activity Planner
+    Given User will click on View Report button of Activity Planner
+    Then User tries to Generate the Report "<Class>" "<From Date>" "<To Date>" "<Past Date>"
+    And Validate the Alerts and Report "<Alerts>"
+
+    Examples: 
+      | Class | From Date | To Date  | Past Date | Alerts                            |
+      | CANDY |  18012023 | 19012023 |  06072000 | Activity Planner Report Generated |
