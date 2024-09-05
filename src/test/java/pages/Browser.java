@@ -19,7 +19,7 @@ public class Browser {
 	@Before
 	public void setUpBrowser() {
 		// Get the browser mode from a system property or environment variable
-		String browserMode = System.getProperty("browser.mode", ""); // Default to headless
+		String browserMode = System.getProperty("browser.mode", "headless"); // Default to headless
 
 		// Set up Chrome options
 		ChromeOptions options = new ChromeOptions();
