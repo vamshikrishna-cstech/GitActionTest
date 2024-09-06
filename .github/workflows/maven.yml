@@ -9,9 +9,9 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      TestType:
+      Tags:
         type: choice
-        description: Select the type of test to run
+        description: 'Select Tags to Run'
         required: true
         default: 'smoketest'
         options:
@@ -35,16 +35,16 @@ jobs:
     - name: Clean the project
       run: mvn clean
 
-    # Skip tests during mvn install
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    # Run tests based on the selected test type
-    - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="@${{ github.event.inputs.TestType }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+    - name: Determine Tags from Feature Files
+      run: |
+        chmod +x ./determine-tags.sh
+        ./determine-tags.sh
 
-      env:
-        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
+    - name: Run Cucumber Tests
+      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
