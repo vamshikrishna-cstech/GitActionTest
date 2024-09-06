@@ -54,8 +54,13 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+	  - name: Run Cucumber Tests
+	    run: |
+	      if [ -n "$TAG_STRING" ]; then
+	        mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+	      else
+	        mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+	      fi
 
     - name: List target directory files
       run: ls -R target
