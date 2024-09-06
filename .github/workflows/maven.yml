@@ -7,6 +7,15 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      Tag:
+        description: 'Tag to run'
+        required: true
+        type: choice
+        options:
+          - smoketest
+          - regression
 
 jobs:
   build:
@@ -22,16 +31,19 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Determine Tags from Feature Files
+      run: |
+        chmod +x ./.github/workflows/determine-tags.sh
+        ./.github/workflows/determine-tags.sh
+
     - name: Clean the project
       run: mvn clean
 
-    # Skip tests during mvn install
-    - name: Install dependencies (Skip Tests)
+    - name: Install dependencies
       run: mvn install -DskipTests
 
-    # Run tests separately with specific logging options
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="@SmokeTest" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
       env:
         MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"

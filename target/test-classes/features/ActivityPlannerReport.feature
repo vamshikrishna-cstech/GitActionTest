@@ -5,7 +5,7 @@ Feature: Activity Planner
     When user enters "krishna4360@gmail.com" and "Pass@123"
     Then user tries to logged into the application
     Then user will click on Reports Feature
-@SmokeTest
+@smoketest @regression
   Scenario Outline: User will tries to add Activity Planner
     Given User will click on View Report button of Activity Planner
     Then User tries to Generate the Report "<Class>" "<From Date>" "<To Date>" "<Past Date>"
