@@ -42,9 +42,7 @@ jobs:
           echo "Manual run with tag input: ${{ github.event.inputs.Tag }}"
           echo "TAG_STRING=${{ github.event.inputs.Tag }}" >> $GITHUB_ENV
         else
-          TAG=$(./.github/workflows/determine-tags.sh)
-          echo "TAG_STRING=${TAG}" >> $GITHUB_ENV
-          echo "Tag string for Maven: ${TAG}"
+          ./ .github/workflows/determine-tags.sh
         fi
 
     - name: Clean the project
