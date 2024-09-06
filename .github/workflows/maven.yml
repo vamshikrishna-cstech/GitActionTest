@@ -37,9 +37,16 @@ jobs:
     - name: Determine Tags from Feature Files
       id: determine_tags
       run: |
-        TAG=$(./.github/workflows/determine-tags.sh)
-        echo "TAG_STRING=${TAG}" >> $GITHUB_ENV
-        echo "Tag string for Maven: ${TAG}"
+        # Check if the job was manually triggered with a tag input
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "Manual run with tag input: ${{ github.event.inputs.Tag }}"
+          echo "TAG_STRING=${{ github.event.inputs.Tag }}" >> $GITHUB_ENV
+        else
+          # Otherwise, determine tags from feature files
+          TAG=$(./.github/workflows/determine-tags.sh)
+          echo "TAG_STRING=${TAG}" >> $GITHUB_ENV
+          echo "Tag string for Maven: ${TAG}"
+        fi
 
     - name: Clean the project
       run: mvn clean
