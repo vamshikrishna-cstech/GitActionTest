@@ -7,14 +7,20 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      TestType:
+        type: choice
+        description: Select the type of test to run
+        required: true
+        default: 'smoketest'
+        options:
+          - smoketest
+          - regression
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        tag: [smoketest, regression]  # Add or modify tags as needed
 
     steps:
     - name: Checkout code
@@ -33,9 +39,10 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    # Run tests with dynamic tags
+    # Run tests based on the selected test type
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="${{ matrix.tag }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: mvn test -Dcucumber.filter.tags="@${{ github.event.inputs.TestType }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+
       env:
         MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 
