@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>Seleniumtest</groupId>
   <artifactId>Gittest</artifactId>
@@ -8,6 +10,9 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Maven logging configuration -->
+    <maven.logging.level>error</maven.logging.level>
+    <org.slf4j.simpleLogger.defaultLogLevel>error</org.slf4j.simpleLogger.defaultLogLevel>
   </properties>
 
   <dependencies>
@@ -95,10 +100,13 @@
             <include>**/Testrunner.java</include> <!-- Ensure the path matches your test runner -->
           </includes>
           <testFailureIgnore>false</testFailureIgnore>
-          <argLine>-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog</argLine>
+          <!-- Suppress detailed logs -->
+          <systemPropertyVariables>
+            <org.slf4j.simpleLogger.defaultLogLevel>error</org.slf4j.simpleLogger.defaultLogLevel>
+            <org.apache.commons.logging.Log>org.apache.commons.logging.impl.NoOpLog</org.apache.commons.logging.Log>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>
   </build>
-
 </project>
