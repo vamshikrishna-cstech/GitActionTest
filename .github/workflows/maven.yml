@@ -9,11 +9,10 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      Tags:
-        type: choice
-        description: 'Select Tags to Run'
+      Tag:
+        description: 'Tag to run'
         required: true
-        default: 'smoketest'
+        type: choice
         options:
           - smoketest
           - regression
@@ -32,19 +31,22 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Determine Tags from Feature Files
+      run: |
+        chmod +x ./.github/workflows/determine-tags.sh
+        ./.github/workflows/determine-tags.sh
+
     - name: Clean the project
       run: mvn clean
 
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Determine Tags from Feature Files
-      run: |
-        chmod +x ./determine-tags.sh
-        ./determine-tags.sh
-
     - name: Run Cucumber Tests
       run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+
+      env:
+        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 
     - name: List target directory files
       run: ls -R target
