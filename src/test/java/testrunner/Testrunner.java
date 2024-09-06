@@ -8,7 +8,7 @@ import io.cucumber.junit.CucumberOptions;
 @CucumberOptions(
     features = "src/test/resources/features",
     glue = {"stepdefinition","pages"},
-    tags = "@SmokeTest",
+    tags = "@smoketest or @regression",
     monochrome = true,
     plugin = {
         "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"

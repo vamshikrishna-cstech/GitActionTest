@@ -12,6 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        tag: [smoketest, regression]  # Add or modify tags as needed
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -26,13 +30,12 @@ jobs:
       run: mvn clean
 
     # Skip tests during mvn install
-    - name: Install dependencies (Skip Tests)
+    - name: Install dependencies
       run: mvn install -DskipTests
 
-    # Run tests separately with specific logging options
+    # Run tests with dynamic tags
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="@SmokeTest" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-
+      run: mvn test -Dcucumber.filter.tags="${{ matrix.tag }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
       env:
         MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 

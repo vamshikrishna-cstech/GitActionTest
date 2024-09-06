@@ -1,5 +1,6 @@
 Feature: Vcare Login Feature
 
+  @regression
   Scenario Outline: validate vcare login scenario
     Given user launches the url
     When user enters "<username>" and "<password>"
@@ -7,5 +8,5 @@ Feature: Vcare Login Feature
     And validate the Alerts "<Alert>"
 
     Examples: 
-      | username              | password | Alert                       |
-      | krishna4360@gmail.com | Pass@123 | User is on Dashborad page   |
+      | username              | password | Alert                     |
+      | krishna4360@gmail.com | Pass@123 | User is on Dashborad page |
