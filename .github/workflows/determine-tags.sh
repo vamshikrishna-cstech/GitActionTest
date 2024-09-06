@@ -3,10 +3,11 @@
 # Determine tags from feature files
 tags=$(grep -oP '@\K\w+' src/test/resources/features/*.feature 2>/dev/null | sort | uniq | tr '\n' ' ')
 
-# Check if tags were found
+# Check if any tags were found
 if [ -z "$tags" ]; then
   echo "No tags found in feature files."
-  exit 1
+  echo "TAG_STRING=" >> $GITHUB_ENV
+  exit 0
 fi
 
 # Generate a tag string for Maven command
