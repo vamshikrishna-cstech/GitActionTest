@@ -31,7 +31,8 @@ jobs:
 
     # Run tests separately with specific logging options
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" -q
+      run: mvn test -Dcucumber.filter.tags="@smoke" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+
       env:
         MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 
