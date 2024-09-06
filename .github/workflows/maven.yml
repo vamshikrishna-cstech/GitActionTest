@@ -31,11 +31,15 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Make script executable
+      run: chmod +x ./.github/workflows/determine-tags.sh
+
     - name: Determine Tags from Feature Files
+      id: determine_tags
       run: |
-        chmod +x ./.github/workflows/determine-tags.sh
         TAG=$(./.github/workflows/determine-tags.sh)
-        echo "TAG_STRING=$TAG" >> $GITHUB_ENV
+        echo "TAG_STRING=${TAG}" >> $GITHUB_ENV
+        echo "Tag string for Maven: ${TAG}"
 
     - name: Clean the project
       run: mvn clean
