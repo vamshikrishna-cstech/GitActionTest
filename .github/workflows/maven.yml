@@ -31,10 +31,19 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Make script executable
+      run: chmod +x ./.github/workflows/determine-tags.sh
+
     - name: Determine Tags from Feature Files
+      id: determine_tags
       run: |
-        chmod +x ./.github/workflows/determine-tags.sh
-        ./.github/workflows/determine-tags.sh
+        echo "Event: ${{ github.event_name }}"  # For debugging
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "Manual run with tag input: ${{ github.event.inputs.Tag }}"
+          echo "TAG_STRING=${{ github.event.inputs.Tag }}" >> $GITHUB_ENV
+        else
+          ./.github/workflows/determine-tags.sh
+        fi
 
     - name: Clean the project
       run: mvn clean
@@ -43,10 +52,13 @@ jobs:
       run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-
-      env:
-        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
+      run: |
+        echo "Running with TAG_STRING: $TAG_STRING"  # Debugging
+        if [ -n "$TAG_STRING" ]; then
+          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        else
+          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        fi
 
     - name: List target directory files
       run: ls -R target
