@@ -25,7 +25,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17  # Use LTS version if needed
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
@@ -55,9 +55,9 @@ jobs:
       run: |
         echo "Running with TAG_STRING: $TAG_STRING"
         if [ -n "$TAG_STRING" ]; then
-          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" -X
         else
-          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" -X
         fi
       continue-on-error: true  # Continue even if tests fail
 
