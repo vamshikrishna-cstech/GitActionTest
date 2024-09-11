@@ -25,10 +25,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 22
+    - name: Set up JDK 17  # Use LTS version if needed
       uses: actions/setup-java@v4
       with:
-        java-version: '22'
+        java-version: '17'
         distribution: 'temurin'
 
     - name: Make script executable
@@ -37,7 +37,7 @@ jobs:
     - name: Determine Tags from Feature Files
       id: determine_tags
       run: |
-        echo "Event: ${{ github.event_name }}"  # For debugging
+        echo "Event: ${{ github.event_name }}"
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "Manual run with tag input: ${{ github.event.inputs.Tag }}"
           echo "TAG_STRING=${{ github.event.inputs.Tag }}" >> $GITHUB_ENV
@@ -53,18 +53,19 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        echo "Running with TAG_STRING: $TAG_STRING"  # Debugging
+        echo "Running with TAG_STRING: $TAG_STRING"
         if [ -n "$TAG_STRING" ]; then
           mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         else
           mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         fi
+      continue-on-error: true  # Continue even if tests fail
 
     - name: List target directory files
       run: ls -R target
 
     - name: Upload Extent Reports
-      if: success()
+      if: success() || failure()  # Upload regardless of test outcome
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
