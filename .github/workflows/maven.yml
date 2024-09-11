@@ -55,9 +55,9 @@ jobs:
       run: |
         echo "Running with TAG_STRING: $TAG_STRING"
         if [ -n "$TAG_STRING" ]; then
-          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" -X
+          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         else
-          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" -X
+          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         fi
       continue-on-error: true  # Continue even if tests fail
 
