@@ -52,6 +52,7 @@ jobs:
           # Default tag is @regression for push or pull request
           echo "Running default tag: @regression"
           echo "TAG_STRING=@regression" >> $GITHUB_ENV
+        fi
 
     - name: Clean the project
       run: mvn clean
