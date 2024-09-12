@@ -14,8 +14,8 @@ on:
         required: true
         type: choice
         options:
-          - smoketest
-          - regression
+          - '@smoketest'
+          - '@regression'
 
 jobs:
   build:
