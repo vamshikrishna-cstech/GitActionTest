@@ -1,7 +1,14 @@
 #!/bin/bash
 
-# Determine tags from feature files
-tags=$(grep -oP '@\K\w+' src/test/resources/features/*.feature 2>/dev/null | sort | uniq | tr '\n' ' ')
+# Debugging: List all feature files being scanned
+echo "Scanning the following feature files:"
+ls src/test/resources/features/*.feature
+
+# Extract tags from feature files
+tags=$(grep -oP '@\w+' src/test/resources/features/*.feature 2>/dev/null | sort | uniq | tr '\n' ' ')
+
+# Debugging: Output the raw tags found
+echo "Tags found: $tags"
 
 # Check if any tags were found
 if [ -z "$tags" ]; then
@@ -13,7 +20,7 @@ fi
 # Generate a tag string for Maven command
 tag_string=""
 for tag in $tags; do
-  if [[ $tag == "smoketest" || $tag == "regression" ]]; then
+  if [[ $tag == "@smoketest" || $tag == "@regression" ]]; then
     tag_string+="$tag or "
   fi
 done
