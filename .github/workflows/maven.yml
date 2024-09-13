@@ -11,99 +11,72 @@ on:
     inputs:
       tag:
         description: 'Cucumber Tag to run'
-        required: true
+        required: false
         type: choice
         options:
           - '@smoketest'
           - '@regression'
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
-      - name: Clean the project
-        run: mvn clean
-
-      - name: Install dependencies
-        run: mvn install -DskipTests
-
-      - name: Set TAG_STRING based on event
-        id: set_tag_string
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # Manual trigger, use the selected tag
+    - name: Set TAG_STRING
+      id: set_tag_string
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          # Get the tag from manual input (workflow_dispatch)
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
             echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
             echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           else
-            # PR trigger, determine tests to run based on changed files
-            echo "PR event - determining which tests to run..."
-            
-            # List changed files
-            CHANGED_FILES=$(git diff --name-only origin/main)
-            echo "Changed files:"
-            echo "$CHANGED_FILES"
-
-            # Initialize TAG_STRING
-            TAG_STRING=""
-
-            # Check for smoke files
-            if echo "$CHANGED_FILES" | grep -q 'path/to/smoke/files'; then
-              echo "Changes detected in smoke files."
-              TAG_STRING="@smoketest"
-            fi
-
-            # Check for regression files
-            if echo "$CHANGED_FILES" | grep -q 'path/to/regression/files'; then
-              echo "Changes detected in regression files."
-              if [ -n "$TAG_STRING" ]; then
-                TAG_STRING="$TAG_STRING and @regression"
-              else
-                TAG_STRING="@regression"
-              fi
-            fi
-
-            # Fallback: If no specific files were found, default to running no tests
-            if [ -z "$TAG_STRING" ]; then
-              echo "No relevant changes detected."
-              TAG_STRING=""
-            fi
-
-            echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
+            echo "No tag provided for manual run, skipping tests."
+            echo "TAG_STRING=" >> $GITHUB_ENV
           fi
+        else
+          # PR or push event
+          echo "No tag provided for PR or push event, skipping tests."
+          echo "TAG_STRING=" >> $GITHUB_ENV
+        fi
 
-      - name: Run Cucumber Tests
-        run: |
-          if [ -n "$TAG_STRING" ]; then
-            echo "Running tests with TAG_STRING: $TAG_STRING"
-            mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          else
-            echo "No tests to run based on changed files."
-          fi
-        continue-on-error: true
+    - name: Clean the project
+      run: mvn clean
 
-      - name: List target directory files
-        run: ls -R target
+    - name: Install dependencies
+      run: mvn install -DskipTests
 
-      - name: Upload Extent Reports
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: extent-reports
-          path: target/extent-reports/*
+    - name: Run Cucumber Tests
+      if: env.TAG_STRING != ''
+      run: |
+        echo "Running tests with TAG_STRING: $TAG_STRING"
+        mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      continue-on-error: true
+
+    - name: List target directory files
+      run: ls -R target
+
+    - name: Upload Extent Reports
+      if: success() || failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: extent-reports
+        path: target/extent-reports/*
