@@ -31,6 +31,9 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+    - name: Debug Feature Directory and Files
+      run: ls -la src/test/resources/features  # Check if files are present
+
     - name: Determine Tags from Changed Files
       run: |
         chmod +x ./.github/workflows/determine-tags.sh
@@ -49,7 +52,7 @@ jobs:
     - name: Run Cucumber Tests
       if: env.TAG_STRING != ''
       run: |
-        echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"  # Additional debugging before running tests
+        echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
         mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="pretty,html:target/cucumber-reports"
 
     - name: List target directory files
