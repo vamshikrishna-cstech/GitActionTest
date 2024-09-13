@@ -16,14 +16,17 @@ jobs:
       id: detect-changes
       run: |
         CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-        echo "Changed files: $CHANGED_FILES"
+        echo "Changed files: $CHANGED_FILES"  # Debugging step
         TAG_STRING=""
-        if echo "$CHANGED_FILES" | grep -q 'path/to/smoke/tests'; then
-          TAG_STRING="smoketest"
-        elif echo "$CHANGED_FILES" | grep -q 'path/to/regression/tests'; then
-          TAG_STRING="regression"
+        if [ -n "$CHANGED_FILES" ]; then
+          if echo "$CHANGED_FILES" | grep -q 'src/test/resources/features/smoke'; then
+            TAG_STRING="@smoketest"
+          elif echo "$CHANGED_FILES" | grep -q 'src/test/resources/features/regression'; then
+            TAG_STRING="@regression"
+          fi
         fi
         echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
+        echo "TAG_STRING set to: $TAG_STRING"  # Debugging step
 
     - name: Clean the project
       run: mvn clean
@@ -33,7 +36,9 @@ jobs:
 
     - name: Run Cucumber Tests
       if: env.TAG_STRING != ''
-      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: |
+        echo "Running tests with TAG_STRING: $TAG_STRING"  # Debugging step
+        mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
