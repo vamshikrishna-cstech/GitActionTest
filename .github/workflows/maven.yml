@@ -49,11 +49,20 @@ jobs:
           else
             echo "TAG_STRING=" >> $GITHUB_ENV
           fi
-        elif [ "${{ github.event_name }}" == "pull_request" ] || [ "${{ github.event_name }}" == "push" ]; then
-          echo "No tag provided for PR or push event, skipping tests."
-          echo "TAG_STRING=" >> $GITHUB_ENV
+        else
+          # For PR or push, determine if there are relevant changes and set TAG_STRING accordingly
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          echo "Changed files: $CHANGED_FILES"
+          
+          TAG_STRING=""
+          if echo "$CHANGED_FILES" | grep -q 'path/to/smoke/files'; then
+            TAG_STRING="@smoketest"
+          elif echo "$CHANGED_FILES" | grep -q 'path/to/regression/files'; then
+            TAG_STRING="@regression"
+          fi
+
+          echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
         fi
-        echo "TAG_STRING is set to: $TAG_STRING"
 
     - name: Clean the project
       run: mvn clean
