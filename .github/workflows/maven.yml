@@ -9,13 +9,13 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Cucumber Tag to run'
+      Tag:
+        description: 'Tag to run'
         required: true
         type: choice
         options:
-          - '@smoketest'
-          - '@regression'
+          - smoketest
+          - regression
 
 jobs:
   build:
@@ -25,34 +25,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up JDK 22
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '22'
         distribution: 'temurin'
 
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-
-    # Set TAG_STRING based on the event type (workflow_dispatch, push, or pull request)
-    - name: Set TAG_STRING
-      id: set_tag_string
+    - name: Determine Tags from Feature Files
       run: |
-        echo "Event: ${{ github.event_name }}"
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Get the tag from manual input (workflow_dispatch)
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-        else
-          # Default tag is @regression for push or pull request
-          echo "Running default tag: @regression"
-          echo "TAG_STRING=@regression" >> $GITHUB_ENV
-        fi
+        chmod +x ./.github/workflows/determine-tags.sh
+        ./.github/workflows/determine-tags.sh
 
     - name: Clean the project
       run: mvn clean
@@ -61,16 +43,16 @@ jobs:
       run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
-      run: |
-        echo "Running tests with TAG_STRING: $TAG_STRING"
-        mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-      continue-on-error: true
+      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+
+      env:
+        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
 
     - name: List target directory files
       run: ls -R target
 
     - name: Upload Extent Reports
-      if: success() || failure()
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
