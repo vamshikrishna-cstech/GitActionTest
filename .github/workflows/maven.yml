@@ -44,19 +44,16 @@ jobs:
       run: |
         echo "Event: ${{ github.event_name }}"
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Get the tag from manual input (workflow_dispatch)
           if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
             echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           else
-            echo "No tag provided for manual run, skipping tests."
             echo "TAG_STRING=" >> $GITHUB_ENV
           fi
-        else
-          # PR or push event
+        elif [ "${{ github.event_name }}" == "pull_request" ] || [ "${{ github.event_name }}" == "push" ]; then
           echo "No tag provided for PR or push event, skipping tests."
           echo "TAG_STRING=" >> $GITHUB_ENV
         fi
+        echo "TAG_STRING is set to: $TAG_STRING"
 
     - name: Clean the project
       run: mvn clean
@@ -64,15 +61,15 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
+    - name: Debug TAG_STRING
+      run: echo "TAG_STRING=${{ env.TAG_STRING }}"
+
     - name: Run Cucumber Tests
       if: env.TAG_STRING != ''
       run: |
         echo "Running tests with TAG_STRING: $TAG_STRING"
         mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
       continue-on-error: true
-
-    - name: List target directory files
-      run: ls -R target
 
     - name: Upload Extent Reports
       if: success() || failure()
