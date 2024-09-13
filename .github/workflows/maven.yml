@@ -11,7 +11,7 @@ on:
     inputs:
       tag:
         description: 'Cucumber Tag to run'
-        required: false
+        required: true
         type: choice
         options:
           - '@smoketest'
@@ -39,37 +39,19 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    # Set TAG_STRING based on the event type (workflow_dispatch, push, or pull request)
     - name: Set TAG_STRING
       id: set_tag_string
       run: |
         echo "Event: ${{ github.event_name }}"
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          else
-            echo "No tag provided for manual run, skipping tests."
-            echo "TAG_STRING=" >> $GITHUB_ENV
-          fi
+          # Get the tag from manual input (workflow_dispatch)
+          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
+          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
         else
-          # For PR or push, determine if there are relevant changes and set TAG_STRING accordingly
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-          elif [ "${{ github.event_name }}" == "push" ]; then
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          else
-            CHANGED_FILES=""
-          fi
-
-          echo "Changed files: $CHANGED_FILES"
-          
-          TAG_STRING=""
-          if echo "$CHANGED_FILES" | grep -q 'path/to/smoke/files'; then
-            TAG_STRING="@smoketest"
-          elif echo "$CHANGED_FILES" | grep -q 'path/to/regression/files'; then
-            TAG_STRING="@regression"
-          fi
-  
-          echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
+          # Default tag is @regression for push or pull request
+          echo "Running default tag: @regression"
+          echo "TAG_STRING=@regression" >> $GITHUB_ENV
         fi
 
     - name: Clean the project
@@ -78,15 +60,14 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Debug TAG_STRING
-      run: echo "TAG_STRING=${{ env.TAG_STRING }}"
-
     - name: Run Cucumber Tests
-      if: env.TAG_STRING != ''
       run: |
         echo "Running tests with TAG_STRING: $TAG_STRING"
         mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
       continue-on-error: true
+
+    - name: List target directory files
+      run: ls -R target
 
     - name: Upload Extent Reports
       if: success() || failure()
