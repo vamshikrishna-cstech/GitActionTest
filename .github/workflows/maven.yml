@@ -22,12 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag: ['@smoketest', '@regression']
-      # Do not run matrix when workflow_dispatch is used
-      max-parallel: 1
-      include:
-        - tag: '@smoketest'
-        - tag: '@regression'
+        tag: ['@smoketest', '@regression']  # Define tags directly here
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
