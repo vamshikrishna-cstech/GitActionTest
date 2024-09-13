@@ -1,3 +1,22 @@
+name: Run Cucumber Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      Tag:
+        description: 'Tag to run'
+        required: false
+        type: choice
+        options:
+          - smoketest
+          - regression
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,21 +31,10 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-    - name: Detect changes and set tags
-      id: detect-changes
+    - name: Determine Tags from Changed Files
       run: |
-        CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-        echo "Changed files: $CHANGED_FILES"  # Debugging step
-        TAG_STRING=""
-        if [ -n "$CHANGED_FILES" ]; then
-          if echo "$CHANGED_FILES" | grep -q 'src/test/resources/features/smoke'; then
-            TAG_STRING="@smoketest"
-          elif echo "$CHANGED_FILES" | grep -q 'src/test/resources/features/regression'; then
-            TAG_STRING="@regression"
-          fi
-        fi
-        echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
-        echo "TAG_STRING set to: $TAG_STRING"  # Debugging step
+        chmod +x ./.github/workflows/determine-tags.sh
+        ./.github/workflows/determine-tags.sh
 
     - name: Clean the project
       run: mvn clean
@@ -34,11 +42,12 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
+    - name: Debug TAG_STRING
+      run: echo "TAG_STRING=${{ env.TAG_STRING }}"
+
     - name: Run Cucumber Tests
       if: env.TAG_STRING != ''
-      run: |
-        echo "Running tests with TAG_STRING: $TAG_STRING"  # Debugging step
-        mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="pretty,html:target/cucumber-reports"
 
     - name: List target directory files
       run: ls -R target
@@ -47,5 +56,5 @@ jobs:
       if: success() || failure()
       uses: actions/upload-artifact@v4
       with:
-        name: extent-reports
-        path: target/extent-reports/*
+        name: cucumber-reports
+        path: target/cucumber-reports/*
