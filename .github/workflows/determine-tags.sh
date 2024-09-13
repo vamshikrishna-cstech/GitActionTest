@@ -1,9 +1,22 @@
 #!/bin/bash
 
 # Determine tags from feature files
-# This script assumes that feature files are located in src/test/resources/features
+# Ensure the feature files are located in the correct directory
+FEATURE_DIR="src/test/resources/features"
+if [ ! -d "$FEATURE_DIR" ]; then
+  echo "Error: Feature directory '$FEATURE_DIR' does not exist."
+  exit 1
+fi
 
-tags=$(grep -oP '@\K\w+' src/test/resources/features/*.feature | sort | uniq | tr '\n' ' ')
+# Check if any feature files exist
+feature_files=$(ls $FEATURE_DIR/*.feature 2> /dev/null)
+if [ -z "$feature_files" ]; then
+  echo "No feature files found in '$FEATURE_DIR'."
+  exit 1
+fi
+
+# Extract tags from feature files
+tags=$(grep -oP '@\K\w+' $FEATURE_DIR/*.feature | sort | uniq | tr '\n' ' ')
 echo "Detected tags: $tags"
 
 # Generate a tag string for Maven command
