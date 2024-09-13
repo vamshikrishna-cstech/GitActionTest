@@ -47,11 +47,19 @@ jobs:
           if [ -n "${{ github.event.inputs.tag }}" ]; then
             echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           else
+            echo "No tag provided for manual run, skipping tests."
             echo "TAG_STRING=" >> $GITHUB_ENV
           fi
         else
           # For PR or push, determine if there are relevant changes and set TAG_STRING accordingly
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          else
+            CHANGED_FILES=""
+          fi
+
           echo "Changed files: $CHANGED_FILES"
           
           TAG_STRING=""
@@ -60,7 +68,7 @@ jobs:
           elif echo "$CHANGED_FILES" | grep -q 'path/to/regression/files'; then
             TAG_STRING="@regression"
           fi
-
+  
           echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
         fi
 
