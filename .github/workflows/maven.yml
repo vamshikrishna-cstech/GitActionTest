@@ -77,10 +77,10 @@ jobs:
           echo "Changed feature files: $CHANGED_FEATURE_FILES"
 
           if [ -z "$CHANGED_FEATURE_FILES" ]; then
-            echo "No feature files changed. Running default tests."
+            echo "No feature files changed. Running all feature files."
             echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature')" >> $GITHUB_ENV
           else
-            echo "FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
+            echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES")" >> $GITHUB_ENV
           fi
         fi
 
