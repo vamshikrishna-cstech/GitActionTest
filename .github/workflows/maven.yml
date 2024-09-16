@@ -66,28 +66,26 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Set TAG_STRING
-      id: set_tag_string
+    - name: Set FEATURE_FILES
+      id: set_feature_files
       run: |
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature')" >> $GITHUB_ENV
         else
           CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features' || echo "")
           echo "Changed feature files: $CHANGED_FEATURE_FILES"
 
           if [ -z "$CHANGED_FEATURE_FILES" ]; then
-            echo "No feature files changed. Running default tag: @regression"
-            echo "TAG_STRING=@regression" >> $GITHUB_ENV
+            echo "No feature files changed. Running default tests."
+            echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature')" >> $GITHUB_ENV
           else
-            # Constructing tag string based on changed feature files
-            TAG_STRING=$(echo "$CHANGED_FEATURE_FILES" | sed -e 's/^/--tags /' -e 's/\.feature//g' | tr '\n' ' ')
-            echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
+            echo "FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
           fi
         fi
 
-    - name: Debug TAG_STRING
-      run: echo "TAG_STRING=${{ env.TAG_STRING }}"
+    - name: Debug FEATURE_FILES
+      run: echo "FEATURE_FILES=${{ env.FEATURE_FILES }}"
 
     - name: Clean the project
       run: mvn clean
@@ -97,12 +95,12 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        if [ -z "${{ env.TAG_STRING }}" ]; then
-          echo "No tags to test. Skipping tests."
+        if [ -z "${{ env.FEATURE_FILES }}" ]; then
+          echo "No feature files to test. Skipping tests."
           exit 0
         fi
-        echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
-        mvn test -Dcucumber.options="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
+        mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
