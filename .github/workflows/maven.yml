@@ -48,7 +48,7 @@ jobs:
         CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
         if [ -z "$CHANGED_FEATURE_FILES" ]; then
           echo "No feature files changed, skipping tests."
-          exit 0
+          echo "CHANGED_FEATURE_FILES=" >> $GITHUB_ENV
         else
           echo "Changed feature files: $CHANGED_FEATURE_FILES"
           echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
@@ -57,7 +57,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
-    if: success()  # Only run if feature files were detected
+    if: success() && env.CHANGED_FEATURE_FILES != ""
 
     steps:
     - name: Checkout code
@@ -86,7 +86,13 @@ jobs:
     - name: Run Cucumber Tests for Changed Feature Files
       run: |
         echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
+        if [ -z "$CHANGED_FEATURE_FILES" ]; then
+          echo "No feature files to test."
+          exit 0
+        fi
+
         for FEATURE in $CHANGED_FEATURE_FILES; do
+          echo "Running tests for feature: $FEATURE"
           mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         done
 
