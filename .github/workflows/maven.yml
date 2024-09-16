@@ -57,7 +57,10 @@ jobs:
         fi
         
         echo "Changed files: $CHANGED_FILES"
-        echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+        
+        # Format changed files to avoid issues when exporting to the environment
+        SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+        echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
 
     - name: Set TAG_STRING based on changed files
       id: set_tag_string
