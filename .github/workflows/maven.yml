@@ -1,4 +1,4 @@
-name: Run Cucumber Tests
+name: CI Workflow
 
 on:
   push:
@@ -18,14 +18,13 @@ on:
           - '@regression'
 
 jobs:
-  build:
+  build-check:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch the full commit history to compare commits
+        fetch-depth: 0  # Fetch all history for proper diff comparison
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -41,24 +40,36 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    - name: Clean the project
+      run: mvn clean
+
+    - name: Install dependencies
+      run: mvn install -DskipTests
+
+    - name: Build verification
+      run: mvn compile
+
+  pr-check:
+    runs-on: ubuntu-latest
+    needs: build-check  # Run this job only after build-check completes successfully
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history to ensure we can detect changes
+
     - name: Detect Changed Files
       id: detect-changes
       run: |
-        # Fetch all history to make sure we have full commit data
         git fetch --all
         
-        # Detect changed files based on the event type
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # In a pull request, compare the PR branch with the base branch
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }})
         else
-          # For push, compare the latest commit with the previous one
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-        fi
         
         echo "Changed files: $CHANGED_FILES"
         
-        # Format changed files to avoid issues when exporting to the environment
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
         echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
 
@@ -68,26 +79,17 @@ jobs:
         TAG_STRING=""
         for file in $CHANGED_FILES; do
           if grep -q '@regression' "$file"; then
-            echo "Regression tag found in $file"
             TAG_STRING="@regression"
           elif grep -q '@smoketest' "$file"; then
-            echo "Smoketest tag found in $file"
             TAG_STRING="@smoketest"
           fi
         done
 
-        # If no tag is found in the changed files, default to no tests
         if [ -z "$TAG_STRING" ]; then
           echo "No relevant tags found, skipping tests."
         fi
 
         echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
-
-    - name: Clean the project
-      run: mvn clean
-
-    - name: Install dependencies
-      run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
       if: env.TAG_STRING != ''
