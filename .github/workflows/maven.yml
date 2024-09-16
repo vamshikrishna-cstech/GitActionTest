@@ -28,7 +28,7 @@ jobs:
     - name: Fetch all history to make sure we have full commit data
       run: git fetch --all
 
-    - name: Detect Changed Files
+    - name: Detect Changed Feature Files
       id: detect-changes
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -42,11 +42,22 @@ jobs:
         echo "Changed files: $CHANGED_FILES"
         
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
-        echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
+        echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
+        
+        # Filter out only .feature files that have changed
+        CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
+        if [ -z "$CHANGED_FEATURE_FILES" ]; then
+          echo "No feature files changed, skipping tests."
+          echo "CHANGED_FEATURE_FILES=" >> $GITHUB_ENV
+        else
+          echo "Changed feature files: $CHANGED_FEATURE_FILES"
+          echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
+        fi
 
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
+    if: success() && env.CHANGED_FEATURE_FILES != ""
 
     steps:
     - name: Checkout code
@@ -66,38 +77,24 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Set TAG_STRING
-      id: set_tag_string
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-        else
-          if echo "${{ env.CHANGED_FILES }}" | grep -q 'src/test/resources/features'; then
-            TAG_STRING=$(grep -oP '@\w+' $(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features') | sort | uniq | tr '\n' ' ')
-            echo "Detected tags: $TAG_STRING"
-            if [ -z "$TAG_STRING" ]; then
-              echo "No relevant tags found. Running default tag: @regression"
-              echo "TAG_STRING=@regression" >> $GITHUB_ENV
-            else
-              echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
-            fi
-          else
-            echo "No feature files changed. Running default tag: @regression"
-            echo "TAG_STRING=@regression" >> $GITHUB_ENV
-          fi
-        fi
-
     - name: Clean the project
       run: mvn clean
 
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests
+    - name: Run Cucumber Tests for Changed Feature Files
       run: |
-        echo "Running tests with TAG_STRING: $TAG_STRING"
-        mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
+        if [ -z "$CHANGED_FEATURE_FILES" ]; then
+          echo "No feature files to test."
+          exit 0
+        fi
+
+        for FEATURE in $CHANGED_FEATURE_FILES; do
+          echo "Running tests for feature: $FEATURE"
+          mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        done
 
     - name: List target directory files
       run: ls -R target
