@@ -25,10 +25,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history to ensure full commit data
+    - name: Fetch all history to make sure we have full commit data
       run: git fetch --all
 
-    - name: Detect Changed Feature Files
+    - name: Detect Changed Files
       id: detect-changes
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
@@ -42,17 +42,7 @@ jobs:
         echo "Changed files: $CHANGED_FILES"
         
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
-        echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
-        
-        # Filter only .feature files that have changed
-        CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
-        echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
-        
-        if [ -z "$CHANGED_FEATURE_FILES" ]; then
-          echo "No feature files changed."
-        else
-          echo "Changed feature files: $CHANGED_FEATURE_FILES"
-        fi
+        echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
 
   build:
     runs-on: ubuntu-latest
@@ -76,27 +66,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    - name: Set TAG_STRING based on changed feature files
+      id: set_tag_string
+      run: |
+        # Run the determine-tags script to get the tag string for Maven
+        bash ./scripts/determine-tags.sh
+
     - name: Clean the project
       run: mvn clean
 
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests for Changed Feature Files
+    - name: Run Cucumber Tests
       run: |
-        echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
-        if [ -z "$CHANGED_FEATURE_FILES" ]; then
-          echo "No feature files to test."
-          exit 0
+        if [ -z "$TAG_STRING" ]; then
+          echo "No specific tags to run. Running all tests."
+          mvn test -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        else
+          echo "Running tests with TAG_STRING: $TAG_STRING"
+          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         fi
-
-        for FEATURE in $CHANGED_FEATURE_FILES; do
-          echo "Running tests for feature: $FEATURE"
-          mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        done
-
-    - name: List target directory files
-      run: ls -R target
 
     - name: Upload Extent Reports
       if: success() || failure()
