@@ -1,5 +1,3 @@
-# .github/workflows/run-tests.yml
-
 name: Run Cucumber Tests
 
 on:
@@ -22,44 +20,34 @@ on:
 jobs:
   detect_changes:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history to ensure we have the latest data
+    - name: Fetch all history to make sure we have full commit data
       run: git fetch --all
 
     - name: Detect Changed Files
       id: detect-changes
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # Get the base branch and PR branch
           BASE_BRANCH="origin/main"
           PR_BRANCH="${{ github.head_ref }}"
-          
-          # Check if the PR branch exists
-          if git rev-parse --quiet --verify "$PR_BRANCH" >/dev/null; then
-            CHANGED_FILES=$(git diff --name-only "$BASE_BRANCH...$PR_BRANCH" 2>/dev/null || echo "No common base")
-          else
-            echo "PR branch $PR_BRANCH does not exist."
-            CHANGED_FILES="No common base"
-          fi
+          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null || echo "No common base")
         else
-          # For push, compare the latest commit with the previous one
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "No previous commit")
         fi
         
         echo "Changed files: $CHANGED_FILES"
         
-        # Format changed files to avoid issues when exporting to the environment
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
         echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
 
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -78,23 +66,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Install dependencies
-      run: mvn install -DskipTests
-
-  run_tests:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Set TAG_STRING
+      id: set_tag_string
       run: |
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Manual trigger with tag input
+          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
           echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
         else
-          # For push or PR, determine tag based on changed files
           if echo "${{ env.CHANGED_FILES }}" | grep -q 'src/test/resources/features'; then
             TAG_STRING=$(grep -oP '@\w+' $(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features') | sort | uniq | tr '\n' ' ')
             echo "Detected tags: $TAG_STRING"
@@ -109,6 +87,12 @@ jobs:
             echo "TAG_STRING=@regression" >> $GITHUB_ENV
           fi
         fi
+
+    - name: Clean the project
+      run: mvn clean
+
+    - name: Install dependencies
+      run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
       run: |
