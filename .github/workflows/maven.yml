@@ -74,14 +74,8 @@ jobs:
           echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
         else
           if echo "${{ env.CHANGED_FILES }}" | grep -q 'src/test/resources/features'; then
-            CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features')
-            echo "Changed feature files: $CHANGED_FEATURE_FILES"
-            if [ -z "$CHANGED_FEATURE_FILES" ]; then
-              echo "No feature files changed. Running default tag: @regression"
-              echo "TAG_STRING=@regression" >> $GITHUB_ENV
-            else
-              echo "TAG_STRING=@regression" >> $GITHUB_ENV
-            fi
+            echo "Changed feature files detected. Running default tag: @regression"
+            echo "TAG_STRING=@regression" >> $GITHUB_ENV
           else
             echo "No feature files changed. Running default tag: @regression"
             echo "TAG_STRING=@regression" >> $GITHUB_ENV
