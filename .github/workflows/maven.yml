@@ -80,8 +80,9 @@ jobs:
               echo "No feature files changed. Running default tag: @regression"
               echo "TAG_STRING=@regression" >> $GITHUB_ENV
             else
-              echo "Running tests on changed feature files."
-              echo "TAG_STRING=${{ env.TAG_STRING }}" >> $GITHUB_ENV
+              # Extracting unique tags from changed feature files
+              UNIQUE_TAGS=$(grep -oP '@\w+' <<< "$CHANGED_FEATURE_FILES" | sort | uniq | tr '\n' ' ')
+              echo "TAG_STRING=$UNIQUE_TAGS" >> $GITHUB_ENV
             fi
           else
             echo "No feature files changed. Running default tag: @regression"
@@ -101,10 +102,10 @@ jobs:
     - name: Run Cucumber Tests
       run: |
         if [ -z "${{ env.TAG_STRING }}" ]; then
-          echo "No feature files or tags to test. Skipping tests."
+          echo "No tags to test. Skipping tests."
           exit 0
         fi
-        echo "Running tests with TAG_STRING: $TAG_STRING"
+        echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
         mvn test -Dcucumber.options="--tags '${{ env.TAG_STRING }}'" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
