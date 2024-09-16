@@ -80,13 +80,16 @@ jobs:
               echo "No feature files changed. Running default tag: @regression"
               echo "TAG_STRING=@regression" >> $GITHUB_ENV
             else
-              echo "TAG_STRING=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
+              echo "TAG_STRING=${{ env.TAG_STRING }}" >> $GITHUB_ENV
             fi
           else
             echo "No feature files changed. Running default tag: @regression"
             echo "TAG_STRING=@regression" >> $GITHUB_ENV
           fi
         fi
+
+    - name: Debug TAG_STRING
+      run: echo "TAG_STRING=${{ env.TAG_STRING }}"
 
     - name: Clean the project
       run: mvn clean
@@ -101,7 +104,7 @@ jobs:
           exit 0
         fi
         echo "Running tests with TAG_STRING: $TAG_STRING"
-        mvn test -Dcucumber.features="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        mvn test -Dcucumber.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
