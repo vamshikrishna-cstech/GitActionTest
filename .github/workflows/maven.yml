@@ -1,3 +1,5 @@
+# .github/workflows/run-tests.yml
+
 name: Run Cucumber Tests
 
 on:
@@ -20,23 +22,33 @@ on:
 jobs:
   detect_changes:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history to make sure we have full commit data
+    - name: Fetch all history to ensure we have the latest data
       run: git fetch --all
 
     - name: Detect Changed Files
       id: detect-changes
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # In a pull request, compare the PR branch with the base branch
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }})
+          # Get the base branch and PR branch
+          BASE_BRANCH="origin/main"
+          PR_BRANCH="${{ github.head_ref }}"
+          
+          # Check if the PR branch exists
+          if git rev-parse --quiet --verify "$PR_BRANCH" >/dev/null; then
+            CHANGED_FILES=$(git diff --name-only "$BASE_BRANCH...$PR_BRANCH" 2>/dev/null || echo "No common base")
+          else
+            echo "PR branch $PR_BRANCH does not exist."
+            CHANGED_FILES="No common base"
+          fi
         else
           # For push, compare the latest commit with the previous one
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "No previous commit")
         fi
         
         echo "Changed files: $CHANGED_FILES"
@@ -68,19 +80,15 @@ jobs:
           ${{ runner.os }}-maven-
 
     - name: Set TAG_STRING
-      id: set_tag_string
       run: |
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Get the tag from manual input (workflow_dispatch)
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
+          # Manual trigger with tag input
           echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
         else
-          # Use tags based on changed files
+          # For push or PR, determine tag based on changed files
           if echo "${{ env.CHANGED_FILES }}" | grep -q 'src/test/resources/features'; then
-            # Only consider files in the 'features' directory
             TAG_STRING=$(grep -oP '@\w+' $(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features') | sort | uniq | tr '\n' ' ')
             echo "Detected tags: $TAG_STRING"
-            # Check if no relevant tags found
             if [ -z "$TAG_STRING" ]; then
               echo "No relevant tags found. Running default tag: @regression"
               echo "TAG_STRING=@regression" >> $GITHUB_ENV
