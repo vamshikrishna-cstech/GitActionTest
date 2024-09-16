@@ -71,16 +71,16 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature')" >> $GITHUB_ENV
+          echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature' -print0 | tr '\0' ' ')" >> $GITHUB_ENV
         else
-          CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features' || echo "")
+          CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep -E '^src/test/resources/features/.*\.feature$' || echo "")
           echo "Changed feature files: $CHANGED_FEATURE_FILES"
 
           if [ -z "$CHANGED_FEATURE_FILES" ]; then
             echo "No feature files changed. Running all feature files."
-            echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature')" >> $GITHUB_ENV
+            echo "FEATURE_FILES=$(find src/test/resources/features -name '*.feature' -print0 | tr '\0' ' ')" >> $GITHUB_ENV
           else
-            echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES")" >> $GITHUB_ENV
+            echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
           fi
         fi
 
