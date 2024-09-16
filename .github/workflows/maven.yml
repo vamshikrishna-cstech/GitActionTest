@@ -25,13 +25,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history to ensure full commit data
+    - name: Fetch all history to make sure we have full commit data
       run: git fetch --all
 
     - name: Detect Changed Files
       id: detect-changes
       run: |
-        echo "Event: ${{ github.event_name }}"
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           BASE_BRANCH="origin/main"
           PR_BRANCH="${{ github.head_ref }}"
@@ -41,15 +40,9 @@ jobs:
         fi
         
         echo "Changed files: $CHANGED_FILES"
+        
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
         echo "CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
-        echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES"
-        
-        # Extra Debugging
-        if [ -z "$SAFE_CHANGED_FILES" ]; then
-          echo "No changed files detected."
-          exit 1
-        fi
 
   build:
     runs-on: ubuntu-latest
@@ -73,10 +66,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    - name: Make determine-tags.sh executable
+      run: chmod +x ./scripts/determine-tags.sh
+
     - name: Run determine-tags.sh to get tags for Maven
       run: |
         echo "Running determine-tags script..."
-        bash ./determine-tags.sh || { echo "Script failed"; exit 1; }
+        bash ./scripts/determine-tags.sh || { echo "Script failed"; exit 1; }
         echo "TAG_STRING=$TAG_STRING"
       shell: /usr/bin/bash -e {0}
 
@@ -88,18 +84,26 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        echo "CHANGED_FEATURE_FILES: $CHANGED_FEATURE_FILES"
-        if [ -z "$CHANGED_FEATURE_FILES" ]; then
-          echo "No feature files to test."
-          exit 0
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "Running tests with TAG_STRING: ${{ github.event.inputs.tag }}"
+          mvn test -Dcucumber.filter.tags="${{ github.event.inputs.tag }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        else
+          if echo "${{ env.CHANGED_FILES }}" | grep -q 'src/test/resources/features'; then
+            CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep 'src/test/resources/features')
+            if [ -z "$CHANGED_FEATURE_FILES" ]; then
+              echo "No feature files to test."
+              exit 0
+            fi
+            echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
+            for FEATURE in $CHANGED_FEATURE_FILES; do
+              echo "Running tests for feature: $FEATURE"
+              mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+            done
+          else
+            echo "No feature files changed. Running default tag: @regression"
+            mvn test -Dcucumber.filter.tags="@regression" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+          fi
         fi
-
-        echo "Running tests with TAG_STRING: $TAG_STRING"
-        for FEATURE in $CHANGED_FEATURE_FILES; do
-          echo "Running tests for feature: $FEATURE"
-          mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        done
-      shell: /usr/bin/bash -e {0}
 
     - name: List target directory files
       run: ls -R target
