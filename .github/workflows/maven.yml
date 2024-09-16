@@ -24,6 +24,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history to access all commits
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -31,34 +33,30 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-
-    # Detect the files changed in the pull request or push event
     - name: Detect Changed Files
       id: detect-changes
       run: |
-        CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+        # Fetch the full repository history to ensure we can compare commits
+        git fetch --all
+        
+        # Get the changed files between the previous commit and the current commit
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }})
+        else
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+        fi
+        
         echo "Changed files: $CHANGED_FILES"
         echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
-    # Set TAG_STRING based on the modified file and its content
-    - name: Set TAG_STRING from Changed Files
+    - name: Set TAG_STRING based on changed files
       id: set_tag_string
       run: |
         TAG_STRING=""
-        # Only run tests for files that contain the @regression or @smoketest tag
         for file in $CHANGED_FILES; do
           if grep -q '@regression' "$file"; then
-            echo "Regression tag found in $file"
             TAG_STRING="@regression"
           elif grep -q '@smoketest' "$file"; then
-            echo "Smoketest tag found in $file"
             TAG_STRING="@smoketest"
           fi
         done
