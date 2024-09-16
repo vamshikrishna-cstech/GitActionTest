@@ -39,20 +39,30 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    # Set TAG_STRING based on the event type (workflow_dispatch, push, or pull request)
-    - name: Set TAG_STRING
+    # Detect the files changed in the pull request or push event
+    - name: Detect Changed Files
+      id: detect-changes
+      run: |
+        CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+        echo "Changed files: $CHANGED_FILES"
+        echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+
+    # Set TAG_STRING based on the modified file and its content
+    - name: Set TAG_STRING from Changed Files
       id: set_tag_string
       run: |
-        echo "Event: ${{ github.event_name }}"
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Get the tag from manual input (workflow_dispatch)
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-        else
-          # Default tag is @regression for push or pull request
-          echo "Running default tag: @regression"
-          echo "TAG_STRING=@regression" >> $GITHUB_ENV
-        fi
+        TAG_STRING=""
+        # Only run tests for files that contain the @regression or @smoketest tag
+        for file in $CHANGED_FILES; do
+          if grep -q '@regression' "$file"; then
+            echo "Regression tag found in $file"
+            TAG_STRING="@regression"
+          elif grep -q '@smoketest' "$file"; then
+            echo "Smoketest tag found in $file"
+            TAG_STRING="@smoketest"
+          fi
+        done
+        echo "TAG_STRING=$TAG_STRING" >> $GITHUB_ENV
 
     - name: Clean the project
       run: mvn clean
@@ -61,10 +71,10 @@ jobs:
       run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
+      if: env.TAG_STRING != ''
       run: |
         echo "Running tests with TAG_STRING: $TAG_STRING"
         mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-      continue-on-error: true
 
     - name: List target directory files
       run: ls -R target
