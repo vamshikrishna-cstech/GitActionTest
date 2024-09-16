@@ -25,7 +25,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history to make sure we have full commit data
+    - name: Fetch all history to ensure full commit data
       run: git fetch --all
 
     - name: Detect Changed Feature Files
@@ -38,26 +38,25 @@ jobs:
         else
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "No previous commit")
         fi
-        
+
         echo "Changed files: $CHANGED_FILES"
         
         SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
         echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
         
-        # Filter out only .feature files that have changed
+        # Filter only .feature files that have changed
         CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
+        echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
+        
         if [ -z "$CHANGED_FEATURE_FILES" ]; then
-          echo "No feature files changed, skipping tests."
-          echo "CHANGED_FEATURE_FILES=" >> $GITHUB_ENV
+          echo "No feature files changed."
         else
           echo "Changed feature files: $CHANGED_FEATURE_FILES"
-          echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
         fi
 
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
-    if: success() && env.CHANGED_FEATURE_FILES != ""
 
     steps:
     - name: Checkout code
