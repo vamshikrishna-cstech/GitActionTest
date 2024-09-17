@@ -22,89 +22,100 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Fetch all history
-        run: git fetch --all
+    - name: Fetch all history
+      run: git fetch --all
 
-      - name: Detect Changed Files
-        id: detect-changes
-        run: |
-          BASE_BRANCH="origin/main"
-          PR_BRANCH="${{ github.head_ref }}"
-          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null || echo "No common base")
-          echo "Changed files: $CHANGED_FILES"
-          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+    - name: Detect Changed Files
+      id: detect-changes
+      run: |
+        BASE_BRANCH="origin/main"
+        PR_BRANCH="${{ github.head_ref }}"
+        CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null || echo "No common base")
+        echo "Changed files: $CHANGED_FILES"
+        echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
-      - name: Set FEATURE_FILES
-        id: set_feature_files
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # Filter out the changed feature files only
-            CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep -E '^src/test/resources/features/.*\.feature$' || echo "")
-            if [ -z "$CHANGED_FEATURE_FILES" ]; then
-              echo "No feature files changed. Skipping tests."
-              echo "FEATURE_FILES=" >> $GITHUB_ENV
-            else
-              echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
-            fi
-          else
+    - name: Set TAG_STRING
+      id: set_tag_string
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
+          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+        elif [ "${{ github.event_name }}" == "push" ]; then
+          echo "Running all tests as it's a push event"
+          echo "TAG_STRING=@regression" >> $GITHUB_ENV
+        fi
+
+    - name: Set FEATURE_FILES
+      id: set_feature_files
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Filter out the changed feature files only
+          CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep -E '^src/test/resources/features/.*\.feature$' || echo "")
+          if [ -z "$CHANGED_FEATURE_FILES" ]; then
+            echo "No feature files changed. Skipping tests."
             echo "FEATURE_FILES=" >> $GITHUB_ENV
-
-      - name: Set TAG_STRING
-        id: set_tag_string
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-            echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           else
-            echo "TAG_STRING=" >> $GITHUB_ENV
+            echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
+          fi
+        else
+          echo "FEATURE_FILES=" >> $GITHUB_ENV
+        fi
 
-      - name: Clean the project
-        run: mvn clean
+    - name: Debug Environment
+      run: |
+        echo "Event Name: ${{ github.event_name }}"
+        echo "CHANGED_FILES: ${{ env.CHANGED_FILES }}"
+        echo "FEATURE_FILES: ${{ env.FEATURE_FILES }}"
+        echo "TAG_STRING: ${{ env.TAG_STRING }}"
 
-      - name: Install dependencies
-        run: mvn install -DskipTests
+    - name: Clean the project
+      run: mvn clean
 
-      - name: Run Cucumber Tests
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "${{ env.FEATURE_FILES }}" ]; then
-            echo "Running tests for changed feature files: ${{ env.FEATURE_FILES }}"
-            mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ env.TAG_STRING }}" ]; then
-            echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
-            mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          else
-            echo "No tests to run."
+    - name: Install dependencies
+      run: mvn install -DskipTests
 
-      - name: List target directory files
-        run: ls -R target
+    - name: Run Cucumber Tests
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "${{ env.FEATURE_FILES }}" ]; then
+          echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
+          mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
+          mvn test -Dcucumber.filter.tags="$TAG_STRING" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        else
+          echo "No tests to run."
+        fi
 
-      - name: Upload Extent Reports
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: extent-reports
-          path: target/extent-reports/*
+    - name: List target directory files
+      run: ls -R target
+
+    - name: Upload Extent Reports
+      if: success() || failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: extent-reports
+        path: target/extent-reports/*
