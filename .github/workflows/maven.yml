@@ -29,8 +29,30 @@ jobs:
     - name: Install dependencies
       run: mvn install
 
+    # Step to determine changed files in the PR
+    - name: Get changed files
+      id: get-changed-files
+      run: |
+        git fetch origin main
+        echo "::set-output name=files::$(git diff --name-only HEAD $(git merge-base HEAD origin/main))"
+
+    # Step to filter feature files from changed files
+    - name: Filter feature files
+      id: filter-feature-files
+      run: |
+        changed_files=$(echo "${{ steps.get-changed-files.outputs.files }}" | tr '\n' ' ')
+        feature_files=$(echo "$changed_files" | grep -E '\.feature$')
+        echo "::set-output name=features::${feature_files}"
+      
+    # Step to run Cucumber Tests with filtered features
     - name: Run Cucumber Tests
-      run: mvn test -Dcucumber.options="src/test/resources/features --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:" 
+      run: |
+        feature_files="${{ steps.filter-feature-files.outputs.features }}"
+        if [ -z "$feature_files" ]; then
+          echo "No feature files changed. Skipping Cucumber tests."
+        else
+          mvn test -Dcucumber.options="$feature_files --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        fi
 
     # Debug step: List files in the target directory
     - name: List target directory files
