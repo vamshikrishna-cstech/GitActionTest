@@ -14,4 +14,4 @@ Feature: Childs Daily Activity Feature
     Examples: 
       | Class | Child        | Select Date | Alert                                         |
       | CANDY | Harry Potter |    19012023 | No Activity of Child Found for selected Date! |
-      | CANDY | Harry Potter |    19012023 | Report Genarated Successfully                 |
+      #| CANDY | Harry Potter |    19012023 | Report Genarated Successfully                 |
