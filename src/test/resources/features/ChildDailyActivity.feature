@@ -5,7 +5,7 @@ Feature: Childs Daily Activity Feature
     When user enters "krishna4360@gmail.com" and "Pass@123"
     Then user tries to logged into the application
     Then user will click on Reports Feature
-
+@regression
   Scenario Outline: User tries to Genarate Childs Daily Activity Report
     Given User will click on View Report button of Childs Daily Activity
     Then User tries to Generate the Childs Daily Activity Report "<Class>" "<Child>" "<Select Date>"
