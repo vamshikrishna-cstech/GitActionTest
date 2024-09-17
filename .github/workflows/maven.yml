@@ -36,8 +36,7 @@ jobs:
 
     - name: Run Determine Tags Script
       id: determine-tags
-      run: |
-        .github/workflows/determine-tags.sh
+      run: .github/workflows/determine-tags.sh
 
     - name: Clean the project
       run: mvn clean
@@ -47,7 +46,7 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        feature_files="${{ steps.determine-tags.outputs.features }}"
+        feature_files="${{ env.TAG_STRING }}"
         if [ -z "$feature_files" ]; then
           echo "No feature files changed. Skipping Cucumber tests."
         else

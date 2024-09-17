@@ -1,22 +1,23 @@
 #!/bin/bash
 
-# Check if this step is running in a pull request
-if [ "${{ github.event_name }}" = "pull_request" ]; then
-  # Fetch the latest changes from the main branch
-  git fetch origin main
+# Determine tags from feature files
+# This script assumes that feature files are located in src/test/resources/features
 
-  # Get the list of changed files in the PR
-  changed_files=$(git diff --name-only HEAD $(git merge-base HEAD origin/main))
-  echo "Changed files: $changed_files"
-else
-  # If not a PR, set changed_files to an empty value
-  changed_files=""
-  echo "Changed files: $changed_files"
-fi
+tags=$(grep -oP '@\K\w+' src/test/resources/features/*.feature | sort | uniq | tr '\n' ' ')
+echo "Detected tags: $tags"
 
-# Filter the changed files to include only .feature files
-feature_files=$(echo "$changed_files" | grep -E '\.feature$')
-echo "Feature files: $feature_files"
+# Generate a tag string for Maven command
+tag_string=""
+for tag in $tags; do
+  if [[ $tag == "smoketest" || $tag == "regression" ]]; then
+    tag_string+="$tag or "
+  fi
+done
 
-# Set the output
-echo "::set-output name=features::$feature_files"
+# Remove trailing "or "
+tag_string=${tag_string% or }
+
+echo "Tag string for Maven: $tag_string"
+
+# Export tag string as an environment variable
+echo "TAG_STRING=$tag_string" >> $GITHUB_ENV
