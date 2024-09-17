@@ -34,20 +34,25 @@ jobs:
       id: get-changed-files
       run: |
         git fetch origin main
-        echo "::set-output name=files::$(git diff --name-only HEAD $(git merge-base HEAD origin/main))"
+        changed_files=$(git diff --name-only HEAD $(git merge-base HEAD origin/main))
+        echo "Changed files: $changed_files"
+        echo "::set-output name=files::$changed_files"
 
     # Step to filter feature files from changed files
     - name: Filter feature files
       id: filter-feature-files
       run: |
-        changed_files=$(echo "${{ steps.get-changed-files.outputs.files }}" | tr '\n' ' ')
+        changed_files="${{ steps.get-changed-files.outputs.files }}"
+        echo "Changed files: $changed_files"
         feature_files=$(echo "$changed_files" | grep -E '\.feature$')
-        echo "::set-output name=features::${feature_files}"
-      
+        echo "Feature files: $feature_files"
+        echo "::set-output name=features::$feature_files"
+
     # Step to run Cucumber Tests with filtered features
     - name: Run Cucumber Tests
       run: |
         feature_files="${{ steps.filter-feature-files.outputs.features }}"
+        echo "Feature files to be tested: $feature_files"
         if [ -z "$feature_files" ]; then
           echo "No feature files changed. Skipping Cucumber tests."
         else
