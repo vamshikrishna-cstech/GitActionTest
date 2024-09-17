@@ -47,6 +47,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
+    if: always() && env.CHANGED_FILES != '' # Skip if no feature files are changed
 
     steps:
     - name: Checkout code
@@ -88,25 +89,25 @@ jobs:
       run: echo "FEATURE_FILES=${{ env.FEATURE_FILES }}"
 
     - name: Clean the project
+      if: env.FEATURE_FILES != '' # Skip if no feature files are set
       run: mvn clean
 
     - name: Install dependencies
+      if: env.FEATURE_FILES != '' # Skip if no feature files are set
       run: mvn install -DskipTests
 
     - name: Run Cucumber Tests
+      if: env.FEATURE_FILES != '' # Skip if no feature files are set
       run: |
-        if [ -z "${{ env.FEATURE_FILES }}" ]; then
-          echo "No feature files to test. Skipping tests."
-          exit 0
-        fi
         echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
         mvn test -Dcucumber.features="${{ env.FEATURE_FILES// /, }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
+      if: env.FEATURE_FILES != '' # Skip if no feature files are set
       run: ls -R target
 
     - name: Upload Extent Reports
-      if: success() || failure()
+      if: success() || failure() && env.FEATURE_FILES != '' # Skip if no feature files are set
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
