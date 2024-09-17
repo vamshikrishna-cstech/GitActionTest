@@ -11,7 +11,7 @@ on:
     inputs:
       Tag:
         description: 'Tag to run'
-        required: true
+        required: false
         type: choice
         options:
           - smoketest
@@ -32,11 +32,10 @@ jobs:
         distribution: 'temurin'
 
     - name: Ensure Script Permissions
-      run: chmod +x .github/workflows/determine-tags.sh
+      run: chmod +x .github/scripts/determine-changed-files.sh
 
-    - name: Run Determine Tags Script
-      id: determine-tags
-      run: .github/workflows/determine-tags.sh
+    - name: Determine Changed Feature Files
+      run: .github/scripts/determine-changed-files.sh
 
     - name: Clean the project
       run: mvn clean
@@ -44,17 +43,29 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests
+    - name: Determine Tags for Manual Run
+      if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
-        feature_files="${{ env.TAG_STRING }}"
-        if [ -z "$feature_files" ]; then
-          echo "No feature files changed. Skipping Cucumber tests."
+        TAG="${{ github.event.inputs.Tag }}"
+        if [ -z "$TAG" ]; then
+          echo "No tag specified for manual trigger. Skipping tag-based filtering."
+          echo "TAG_STRING=" >> $GITHUB_ENV
         else
-          mvn test -Dcucumber.options="$feature_files --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+          echo "Running tests with tag: $TAG"
+          echo "TAG_STRING=$TAG" >> $GITHUB_ENV
         fi
 
-      env:
-        MAVEN_OPTS: "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog"
+    - name: Run Cucumber Tests
+      run: |
+        if [ -n "${{ env.FEATURE_FILES }}" ]; then
+          echo "Running tests for changed feature files: ${{ env.FEATURE_FILES }}"
+          mvn test -Dcucumber.options="${{ env.FEATURE_FILES }} --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        elif [ -n "${{ env.TAG_STRING }}" ]; then
+          echo "Running tests with tag: ${{ env.TAG_STRING }}"
+          mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        else
+          echo "No feature files or tags specified. Skipping Cucumber tests."
+        fi
 
     - name: List target directory files
       run: ls -R target
