@@ -11,39 +11,54 @@ on:
     inputs:
       tag:
         description: 'Cucumber Tag to run'
-        required: false
+        required: true
         type: choice
         options:
           - '@smoketest'
           - '@regression'
-      feature:
-        description: 'Feature file to run'
-        required: false
-        type: string
 
 jobs:
   detect_changes:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fetch all history
+    - name: Fetch all history to make sure we have full commit data
       run: git fetch --all
 
-    - name: Detect Changed Files
+    - name: Detect Changed Feature Files
       id: detect-changes
       run: |
-        BASE_BRANCH="origin/main"
-        PR_BRANCH="${{ github.head_ref }}"
-        CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null)
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          BASE_BRANCH="origin/main"
+          PR_BRANCH="${{ github.head_ref }}"
+          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null || echo "No common base")
+        else
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "No previous commit")
+        fi
+        
         echo "Changed files: $CHANGED_FILES"
-        echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+        
+        SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+        echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
+        
+        # Filter out only .feature files that have changed
+        CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
+        if [ -z "$CHANGED_FEATURE_FILES" ]; then
+          echo "No feature files changed, skipping tests."
+          exit 0
+        else
+          echo "Changed feature files: $CHANGED_FEATURE_FILES"
+          echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
+        fi
 
   build:
     runs-on: ubuntu-latest
     needs: detect_changes
+    if: success()  # Only run if feature files were detected
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -62,61 +77,18 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Set TAG_STRING
-      id: set_tag_string
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-        else
-          echo "Running all tests as it's a push event"
-          echo "TAG_STRING=@regression" >> $GITHUB_ENV
-        fi
-
-    - name: Set FEATURE_FILES
-      id: set_feature_files
-      run: |
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          CHANGED_FEATURE_FILES=$(echo "${{ env.CHANGED_FILES }}" | grep -E '^src/test/resources/features/.*\.feature$' || echo "")
-          if [ -z "$CHANGED_FEATURE_FILES" ]; then
-            echo "No feature files changed. Skipping tests."
-            echo "FEATURE_FILES=" >> $GITHUB_ENV
-          else
-            echo "FEATURE_FILES=$(echo "$CHANGED_FEATURE_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
-          fi
-        else
-          echo "FEATURE_FILES=" >> $GITHUB_ENV
-        fi
-
-    - name: Debug Environment
-      run: |
-        echo "Event Name: ${{ github.event_name }}"
-        echo "CHANGED_FILES: ${{ env.CHANGED_FILES }}"
-        echo "FEATURE_FILES: ${{ env.FEATURE_FILES }}"
-        echo "TAG_STRING: ${{ env.TAG_STRING }}"
-
     - name: Clean the project
       run: mvn clean
 
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests
+    - name: Run Cucumber Tests for Changed Feature Files
       run: |
-        if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "${{ env.FEATURE_FILES }}" ]; then
-          echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
-          mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          if [ -n "${{ github.event.inputs.feature }}" ]; then
-            echo "Running tests for manually specified feature file: ${{ github.event.inputs.feature }}"
-            mvn test -Dcucumber.features="${{ github.event.inputs.feature }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          else
-            echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
-            mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          fi
-        else
-          echo "No tests to run."
-        fi
+        echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
+        for FEATURE in $CHANGED_FEATURE_FILES; do
+          mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        done
 
     - name: List target directory files
       run: ls -R target
