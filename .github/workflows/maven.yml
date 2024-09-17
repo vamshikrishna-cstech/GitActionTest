@@ -59,7 +59,7 @@ jobs:
           mvn test -Dcucumber.options="$feature_files --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         fi
 
-    # Debug step: List files in the target directory
+    
     - name: List target directory files
       run: ls -R target
 
