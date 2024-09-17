@@ -100,7 +100,7 @@ jobs:
           exit 0
         fi
         echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
-        mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        mvn test -Dcucumber.features="${{ env.FEATURE_FILES// /, }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
