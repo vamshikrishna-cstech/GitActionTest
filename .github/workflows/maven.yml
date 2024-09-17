@@ -99,12 +99,8 @@ jobs:
           echo "No feature files to test. Skipping tests."
           exit 0
         fi
-        
-        # Split the FEATURE_FILES by spaces and run them individually
-        for file in ${{ env.FEATURE_FILES }}; do
-          echo "Running tests for FEATURE_FILE: $file"
-          mvn test -Dcucumber.features="$file" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        done
+        echo "Running tests for FEATURE_FILES: ${{ env.FEATURE_FILES }}"
+        mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       run: ls -R target
