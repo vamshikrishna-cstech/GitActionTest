@@ -31,33 +31,17 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-    - name: Determine Changed Files
+    - name: Ensure Script Permissions
+      run: chmod +x ./.github/scripts/determine-changed-files.sh
+
+    - name: Echo Test
+      run: echo "Workflow is running"
+
+    - name: Run Changed Files Script
       id: get-changed-files
       run: |
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          git fetch origin main
-          changed_files=$(git diff --name-only HEAD $(git merge-base HEAD origin/main))
-          echo "Changed files: $changed_files"
-          echo "::set-output name=files::$changed_files"
-        else
-          echo "::set-output name=files::"
-        fi
-
-    - name: Filter Feature Files
-      id: filter-feature-files
-      run: |
-        changed_files="${{ steps.get-changed-files.outputs.files }}"
-        echo "Changed files: $changed_files"
-        feature_files=$(echo "$changed_files" | grep -E '\.feature$')
-        echo "Feature files: $feature_files"
-        echo "::set-output name=features::$feature_files"
-
-	- name: Determine Changed Files
-		id: get-changed-files
-		run: |
-		   chmod +x ./.github/scripts/determine-changed-files.sh
-		   ./.github/scripts/determine-changed-files.sh
-
+        set -x  # Print commands and their arguments as they are executed
+        ./.github/scripts/determine-changed-files.sh
 
     - name: Clean the project
       run: mvn clean
@@ -67,16 +51,11 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          feature_files="${{ steps.filter-feature-files.outputs.features }}"
-          if [ -z "$feature_files" ]; then
-            echo "No feature files changed. Skipping Cucumber tests."
-          else
-            mvn test -Dcucumber.options="$feature_files --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          fi
+        feature_files="${{ steps.get-changed-files.outputs.features }}"
+        if [ -z "$feature_files" ]; then
+          echo "No feature files changed. Skipping Cucumber tests."
         else
-          tag="${{ github.event.inputs.Tag }}"
-          mvn test -Dcucumber.filter.tags="$tag" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+          mvn test -Dcucumber.options="$feature_files --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         fi
 
       env:
