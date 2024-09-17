@@ -32,10 +32,10 @@ jobs:
         distribution: 'temurin'
 
     - name: Ensure Script Permissions
-      run: chmod +x .github/scripts/determine-changed-files.sh
+      run: chmod +x .github/workflows/determine-tags.sh
 
-    - name: Determine Changed Feature Files
-      run: .github/scripts/determine-changed-files.sh
+    - name: Determine Tags from Feature Files
+      run: .github/workflows/determine-tags.sh
 
     - name: Clean the project
       run: mvn clean
