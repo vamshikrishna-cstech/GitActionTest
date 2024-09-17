@@ -72,7 +72,6 @@ jobs:
             fi
           else
             echo "FEATURE_FILES=" >> $GITHUB_ENV
-          fi
 
       - name: Set TAG_STRING
         id: set_tag_string
@@ -80,7 +79,8 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
             echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          fi
+          else
+            echo "TAG_STRING=" >> $GITHUB_ENV
 
       - name: Clean the project
         run: mvn clean
@@ -93,7 +93,7 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "${{ env.FEATURE_FILES }}" ]; then
             echo "Running tests for changed feature files: ${{ env.FEATURE_FILES }}"
             mvn test -Dcucumber.features="${{ env.FEATURE_FILES }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ env.TAG_STRING }}" ]; then
             echo "Running tests with TAG_STRING: ${{ env.TAG_STRING }}"
             mvn test -Dcucumber.filter.tags="${{ env.TAG_STRING }}" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
           else
