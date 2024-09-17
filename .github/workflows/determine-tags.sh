@@ -1,36 +1,15 @@
 #!/bin/bash
 
-# Debugging: List all feature files being scanned
-echo "Scanning for changed feature files in: $CHANGED_FILES"
+# Determine tags from feature files
+# This script assumes that feature files are located in src/test/resources/features
 
-# Extract feature files from changed files
-CHANGED_FEATURE_FILES=$(echo "$CHANGED_FILES" | grep 'src/test/resources/features' || echo "No feature files changed")
-
-if [ -z "$CHANGED_FEATURE_FILES" ]; then
-  echo "No changed feature files found."
-  echo "CHANGED_FEATURE_FILES=" >> $GITHUB_ENV
-  exit 0
-fi
-
-echo "Changed feature files: $CHANGED_FEATURE_FILES"
-echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
-
-# Extract tags from feature files
-tags=$(grep -oP '@\w+' $CHANGED_FEATURE_FILES 2>/dev/null | sort | uniq | tr '\n' ' ')
-
-echo "Tags found: $tags"
-
-# Check if any tags were found
-if [ -z "$tags" ]; then
-  echo "No tags found in changed feature files."
-  echo "TAG_STRING=" >> $GITHUB_ENV
-  exit 0
-fi
+tags=$(grep -oP '@\K\w+' src/test/resources/features/*.feature | sort | uniq | tr '\n' ' ')
+echo "Detected tags: $tags"
 
 # Generate a tag string for Maven command
 tag_string=""
 for tag in $tags; do
-  if [[ $tag == "@smoketest" || $tag == "@regression" ]]; then
+  if [[ $tag == "smoketest" || $tag == "regression" ]]; then
     tag_string+="$tag or "
   fi
 done
@@ -38,10 +17,12 @@ done
 # Remove trailing "or "
 tag_string=${tag_string% or }
 
+# Check if tag_string is empty and set a default value if needed
 if [ -z "$tag_string" ]; then
-  echo "No smoketest or regression tags found. Running default tests."
-  echo "TAG_STRING=" >> $GITHUB_ENV
-else
-  echo "Tag string for Maven: $tag_string"
-  echo "TAG_STRING=$tag_string" >> $GITHUB_ENV
+  tag_string="None"
 fi
+
+echo "Tag string for Maven: $tag_string"
+
+# Export tag string as an environment variable
+echo "TAG_STRING=$tag_string" >> $GITHUB_ENV
