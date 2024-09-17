@@ -32,16 +32,12 @@ jobs:
         distribution: 'temurin'
 
     - name: Ensure Script Permissions
-      run: chmod +x ./.github/scripts/determine-changed-files.sh
+      run: chmod +x .github/workflows/determine-tags.sh
 
-    - name: Echo Test
-      run: echo "Workflow is running"
-
-    - name: Run Changed Files Script
-      id: get-changed-files
+    - name: Run Determine Tags Script
+      id: determine-tags
       run: |
-        set -x  # Print commands and their arguments as they are executed
-        ./.github/scripts/determine-changed-files.sh
+        .github/workflows/determine-tags.sh
 
     - name: Clean the project
       run: mvn clean
@@ -51,7 +47,7 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        feature_files="${{ steps.get-changed-files.outputs.features }}"
+        feature_files="${{ steps.determine-tags.outputs.features }}"
         if [ -z "$feature_files" ]; then
           echo "No feature files changed. Skipping Cucumber tests."
         else
