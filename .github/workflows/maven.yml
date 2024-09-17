@@ -11,11 +11,12 @@ on:
     inputs:
       tag:
         description: 'Cucumber Tag to run'
-        required: true
+        required: false
         type: choice
         options:
           - '@smoketest'
           - '@regression'
+          - 'none'
 
 jobs:
   build:
@@ -46,10 +47,19 @@ jobs:
         echo "Event: ${{ github.event_name }}"
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           # Get the tag from manual input (workflow_dispatch)
-          echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
-          echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          if [ "${{ github.event.inputs.tag }}" == "none" ]; then
+            echo "Running tests without tagging."
+            echo "TAG_STRING=" >> $GITHUB_ENV
+          else
+            echo "Manual run with tag input: ${{ github.event.inputs.tag }}"
+            echo "TAG_STRING=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          fi
+        elif [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Run all tests if PR is created/updated
+          echo "Running all tests for PR."
+          echo "TAG_STRING=" >> $GITHUB_ENV
         else
-          # Default tag is @regression for push or pull request
+          # Default tag is @regression for push
           echo "Running default tag: @regression"
           echo "TAG_STRING=@regression" >> $GITHUB_ENV
         fi
