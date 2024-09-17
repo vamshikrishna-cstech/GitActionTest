@@ -52,11 +52,12 @@ jobs:
         echo "Feature files: $feature_files"
         echo "::set-output name=features::$feature_files"
 
-    - name: Determine Tags from Feature Files
-      if: ${{ github.event_name == 'workflow_dispatch' }}
-      run: |
-        chmod +x ./.github/workflows/determine-tags.sh
-        ./.github/workflows/determine-tags.sh
+	- name: Determine Changed Files
+		id: get-changed-files
+		run: |
+		   chmod +x ./.github/scripts/determine-changed-files.sh
+		   ./.github/scripts/determine-changed-files.sh
+
 
     - name: Clean the project
       run: mvn clean
