@@ -10,7 +10,6 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<!-- Maven logging configuration -->
 		<maven.logging.level>error</maven.logging.level>
 		<org.slf4j.simpleLogger.defaultLogLevel>error</org.slf4j.simpleLogger.defaultLogLevel>
 		<org.apache.commons.logging.Log>org.apache.commons.logging.impl.NoOpLog</org.apache.commons.logging.Log>
@@ -80,37 +79,21 @@
 
 	<build>
 		<plugins>
-			<!-- Compiler Plugin -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
-				<configuration>
-					<source>${maven.compiler.source}</source>
-					<target>${maven.compiler.target}</target>
-				</configuration>
-			</plugin>
-
-			<!-- Surefire Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.0</version> <!-- Updated to the latest stable
-				version -->
+				<version>3.5.0</version>
 				<configuration>
 					<includes>
-						<include>**/Testrunner.java</include> <!-- Ensure the
-						path matches your test runner -->
+						<include>**/Testrunner.java</include>
 					</includes>
-					<testFailureIgnore>false</testFailureIgnore>
-					<!-- Suppress detailed logs -->
 					<systemPropertyVariables>
-						<org.slf4j.simpleLogger.defaultLogLevel>error</org.slf4j.simpleLogger.defaultLogLevel>
-						<org.apache.commons.logging.Log>
-							org.apache.commons.logging.impl.NoOpLog</org.apache.commons.logging.Log>
+						<cucumber.features>${features}</cucumber.features>
+						<org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

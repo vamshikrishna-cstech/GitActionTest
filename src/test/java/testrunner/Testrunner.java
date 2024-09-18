@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-    features = "src/test/resources/features",  // Default path
+    features = "classpath:features",  // Use classpath for features path
     glue = {"stepdefinition", "pages"},
     tags = "@smoketest or @regression",
     monochrome = true,
@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 public class Testrunner {
     static {
         String featuresPath = System.getProperty("features");
+        System.out.println("Features Path: " + featuresPath);
         if (featuresPath != null && !featuresPath.isEmpty()) {
             System.setProperty("cucumber.features", featuresPath);
         }

@@ -1,6 +1,6 @@
-pages\Browser.class
 pages\Activity_Planner_page_report.class
-stepdefinition\Activity_Planner_Steps_Reports.class
 pages\Login_page.class
+pages\Browser.class
+stepdefinition\Activity_Planner_Steps_Reports.class
 stepdefinition\Login_steps.class
 testrunner\Testrunner.class
