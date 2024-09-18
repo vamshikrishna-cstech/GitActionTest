@@ -27,9 +27,11 @@ public class Login_page {
 		this.driver = driver;
 		PageFactory.initElements(driver, this);
 	}
+	
 	public void homepageloginbtn() {
 		homepageloginbtn.click();
 	}
+	
 	public void userentersusername(String username) {
 		txt_username.sendKeys(username);
 	}
