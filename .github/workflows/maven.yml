@@ -27,7 +27,8 @@ jobs:
       run: |
         echo "Checking for changed feature files..."
         git fetch origin main  # Ensure the main branch is available
-        CHANGED_FILES=$(git diff --name-only origin/main | grep '.feature' || true)
+        # Only pick .feature files from src/test/resources/features, ignore target folder
+        CHANGED_FILES=$(git diff --name-only origin/main | grep '^src/test/resources/features/.*\.feature$' || true)
         echo "Changed files: $CHANGED_FILES"
         if [ -z "$CHANGED_FILES" ]; then
           echo "No changed feature files detected."
