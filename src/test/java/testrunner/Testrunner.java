@@ -15,5 +15,11 @@ import io.cucumber.junit.CucumberOptions;
     }
 )
 public class Testrunner {
-   
+    static {
+        String features = System.getProperty("features");
+        if (features != null && !features.isEmpty()) {
+            System.out.println("Using feature files from system property: " + features);
+            System.setProperty("cucumber.features", features);
+        }
+    }
 }

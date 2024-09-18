@@ -46,14 +46,6 @@ jobs:
         echo "features: ${{ env.features }}"
         echo "run_tests: ${{ env.run_tests }}"
 
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-
     - name: Clean the project
       if: env.run_tests == 'true'
       run: mvn clean
@@ -68,7 +60,7 @@ jobs:
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
         # Pass the feature file paths as a system property to Maven
-        mvn test -Dfeatures="${{ env.features }}"
+        mvn test -Dfeatures="${{ env.features }}" -DskipTests=false
 
     - name: List target directory files
       if: env.run_tests == 'true'
