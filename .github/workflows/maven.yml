@@ -1,100 +1,69 @@
 name: Run Cucumber Tests
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Cucumber Tag to run'
-        required: true
+      Tag:
+        description: 'Tag to run'
+        required: false
         type: choice
         options:
-          - '@smoketest'
-          - '@regression'
+          - smoketest
+          - regression
 
 jobs:
-  detect_changes:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Fetch all history to make sure we have full commit data
-      run: git fetch --all
-
-    - name: Detect Changed Feature Files
-      id: detect-changes
-      run: |
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          BASE_BRANCH="origin/main"
-          PR_BRANCH="${{ github.head_ref }}"
-          CHANGED_FILES=$(git diff --name-only $BASE_BRANCH...$PR_BRANCH 2>/dev/null || echo "No common base")
-        else
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "No previous commit")
-        fi
-        
-        echo "Changed files: $CHANGED_FILES"
-        
-        SAFE_CHANGED_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ')
-        echo "SAFE_CHANGED_FILES=$SAFE_CHANGED_FILES" >> $GITHUB_ENV
-        
-        # Filter out only .feature files that have changed
-        CHANGED_FEATURE_FILES=$(echo "$SAFE_CHANGED_FILES" | grep '.feature' || echo "")
-        if [ -z "$CHANGED_FEATURE_FILES" ]; then
-          echo "No feature files changed, skipping tests."
-          exit 0
-        else
-          echo "Changed feature files: $CHANGED_FEATURE_FILES"
-          echo "CHANGED_FEATURE_FILES=$CHANGED_FEATURE_FILES" >> $GITHUB_ENV
-        fi
-
   build:
     runs-on: ubuntu-latest
-    needs: detect_changes
-    if: success()  # Only run if feature files were detected
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up JDK 22
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '22'
         distribution: 'temurin'
 
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+    # Detect changed feature files
+    - name: Determine Changed Feature Files
+      id: changed_files
+      run: |
+        echo "Checking for changed feature files..."
+        CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '.feature' || true)
+        echo "Changed files: $CHANGED_FILES"
+        if [ -z "$CHANGED_FILES" ]; then
+          echo "No changed feature files detected."
+          echo "run_tests=false" >> $GITHUB_ENV
+        else
+          echo "run_tests=true" >> $GITHUB_ENV
+          echo "features=$CHANGED_FILES" >> $GITHUB_ENV
+        fi
 
+    # Clean the project
     - name: Clean the project
       run: mvn clean
 
     - name: Install dependencies
       run: mvn install -DskipTests
 
-    - name: Run Cucumber Tests for Changed Feature Files
+    # Execute Cucumber tests for changed feature files
+    - name: Execute Test Suite
+      if: env.run_tests == 'true'
       run: |
-        echo "Running tests for changed feature files: $CHANGED_FEATURE_FILES"
-        for FEATURE in $CHANGED_FEATURE_FILES; do
-          mvn test -Dcucumber.features="$FEATURE" -Dcucumber.plugin="com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
-        done
+        echo "Running Cucumber tests for changed feature files: ${{ env.features }}"
+        mvn test -Dcucumber.options="${{ env.features }} --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
+    # Debug step: List files in the target directory
     - name: List target directory files
       run: ls -R target
 
+    # Upload Extent Reports
     - name: Upload Extent Reports
-      if: success() || failure()
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
