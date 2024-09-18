@@ -27,7 +27,6 @@ jobs:
       run: |
         echo "Checking for changed feature files..."
         git fetch origin main  # Ensure the main branch is available
-        # Only pick .feature files from src/test/resources/features, ignore target folder
         CHANGED_FILES=$(git diff --name-only origin/main | grep '^src/test/resources/features/.*\.feature$' || true)
         echo "Changed files: $CHANGED_FILES"
         if [ -z "$CHANGED_FILES" ]; then
@@ -52,7 +51,7 @@ jobs:
       run: |
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
-        mvn test -Dcucumber.options="${{ env.features }} --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+        mvn test -Dfeatures="${{ env.features }}"
 
     - name: List target directory files
       if: env.run_tests == 'true'
