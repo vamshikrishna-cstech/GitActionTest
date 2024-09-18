@@ -49,7 +49,10 @@ jobs:
 
     - name: Run Cucumber Tests
       if: env.run_tests == 'true'
-      run: mvn test -Dcucumber.options="${{ env.features }} --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+      run: |
+        echo "Running tests for feature files:"
+        echo "${{ env.features }}"
+        mvn test -Dcucumber.options="${{ env.features }} --plugin com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
 
     - name: List target directory files
       if: env.run_tests == 'true'
