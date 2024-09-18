@@ -34,8 +34,8 @@ jobs:
           echo "run_tests=false" >> $GITHUB_ENV
         else
           echo "run_tests=true" >> $GITHUB_ENV
-          # Join all feature file paths into a single string separated by commas, removing trailing comma
-          echo "features=$(echo $CHANGED_FILES | tr '\n' ',')" | sed 's/,$//' >> $GITHUB_ENV
+          # Join all feature file paths into a single string separated by commas
+          echo "features=$(echo $CHANGED_FILES | tr '\n' ',')" >> $GITHUB_ENV
         fi
       shell: /usr/bin/bash -e {0}
 
@@ -60,7 +60,7 @@ jobs:
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
         # Pass the feature file paths as a system property to Maven
-        mvn test -Dfeatures="${{ env.features }}" -DskipTests=false
+        mvn test -Dfeatures="${{ env.features }}"
 
     - name: List target directory files
       if: env.run_tests == 'true'
