@@ -1,14 +1,14 @@
 package testrunner;
 
-import org.junit.runner.RunWith;
 import io.cucumber.junit.Cucumber;
 import io.cucumber.junit.CucumberOptions;
+import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-    features = "@features",  // Placeholder to be replaced by system property
+    features = "src/test/resources/features",  // Default path
     glue = {"stepdefinition", "pages"},
-    tags = "@smoketest or @regression", // You can dynamically modify tags if needed
+    tags = "@smoketest or @regression",
     monochrome = true,
     plugin = {
         "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
@@ -16,8 +16,9 @@ import io.cucumber.junit.CucumberOptions;
 )
 public class Testrunner {
     static {
-        // Replace placeholder with actual path from system property
-        String featuresPath = System.getProperty("features", "src/test/resources/features");
-        System.setProperty("features", featuresPath);
+        String featuresPath = System.getProperty("features");
+        if (featuresPath != null && !featuresPath.isEmpty()) {
+            System.setProperty("cucumber.features", featuresPath);
+        }
     }
 }

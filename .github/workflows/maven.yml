@@ -38,6 +38,13 @@ jobs:
         fi
       shell: /usr/bin/bash -e {0}
 
+    - name: Debug Environment Variables
+      if: env.run_tests == 'true'
+      run: |
+        echo "Environment variables:"
+        echo "features: ${{ env.features }}"
+        echo "run_tests: ${{ env.run_tests }}"
+
     - name: Clean the project
       if: env.run_tests == 'true'
       run: mvn clean
@@ -51,7 +58,9 @@ jobs:
       run: |
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
-        mvn test -Dfeatures="${{ env.features }}"
+        # Convert the list of files into a comma-separated string if needed
+        FEATURE_FILES=$(echo "${{ env.features }}" | tr '\n' ',')
+        mvn test -Dfeatures="${FEATURE_FILES}"
 
     - name: List target directory files
       if: env.run_tests == 'true'
@@ -63,3 +72,10 @@ jobs:
       with:
         name: extent-reports
         path: target/extent-reports/*
+
+    - name: Upload Failure Logs
+      if: failure() && env.run_tests == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: failure-logs
+        path: target/surefire-reports/*
