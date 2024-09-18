@@ -58,9 +58,8 @@ jobs:
       run: |
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
-        # Convert the list of files into a comma-separated string if needed
-        FEATURE_FILES=$(echo "${{ env.features }}" | tr '\n' ',')
-        mvn test -Dfeatures="${FEATURE_FILES}"
+        # Ensure the feature paths are passed correctly
+        mvn test -Dfeatures="${{ env.features }}"
 
     - name: List target directory files
       if: env.run_tests == 'true'
