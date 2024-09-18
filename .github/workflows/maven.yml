@@ -29,19 +29,24 @@ jobs:
         distribution: 'temurin'
 
     # Detect changed feature files
-    - name: Determine Changed Feature Files
-      id: changed_files
-      run: |
-        echo "Checking for changed feature files..."
-        CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '.feature' || true)
-        echo "Changed files: $CHANGED_FILES"
-        if [ -z "$CHANGED_FILES" ]; then
-          echo "No changed feature files detected."
-          echo "run_tests=false" >> $GITHUB_ENV
-        else
-          echo "run_tests=true" >> $GITHUB_ENV
-          echo "features=$CHANGED_FILES" >> $GITHUB_ENV
-        fi
+	- name: Determine Changed Feature Files
+	  id: changed_files
+	  run: |
+	    echo "Checking for changed feature files..."
+	    CHANGED_FILES=$(git diff --name-only origin/main | grep '.feature' || true)
+	    echo "Changed files: $CHANGED_FILES"
+	    if [ -z "$CHANGED_FILES" ]; then
+	      echo "No changed feature files detected."
+	      echo "run_tests=false" >> $GITHUB_ENV
+	    else
+	      echo "run_tests=true" >> $GITHUB_ENV
+	      echo "features=$CHANGED_FILES" >> $GITHUB_ENV
+	    fi
+	  shell: /usr/bin/bash -e {0}
+	  env:
+	    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/22.0.2-9/x64
+	    JAVA_HOME_22_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/22.0.2-9/x64
+
 
     # Clean the project
     - name: Clean the project
