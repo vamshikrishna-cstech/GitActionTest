@@ -34,7 +34,8 @@ jobs:
           echo "run_tests=false" >> $GITHUB_ENV
         else
           echo "run_tests=true" >> $GITHUB_ENV
-          echo "features=$CHANGED_FILES" >> $GITHUB_ENV
+          # Convert file paths to a space-separated list (if needed)
+          echo "features=$(echo "$CHANGED_FILES" | tr '\n' ' ')" >> $GITHUB_ENV
         fi
       shell: /usr/bin/bash -e {0}
 
@@ -58,7 +59,7 @@ jobs:
       run: |
         echo "Running tests for feature files:"
         echo "${{ env.features }}"
-        # Ensure the feature paths are passed correctly
+        # Ensure that the feature paths are passed correctly
         mvn test -Dfeatures="${{ env.features }}"
 
     - name: List target directory files
