@@ -1,4 +1,4 @@
-name: Run Cucumber Tests
+name: PR check
 
 on:
   push:
@@ -69,15 +69,8 @@ jobs:
       run: ls -R target
 
     - name: Upload Extent Reports
-      if: success() && env.run_tests == 'true'
+      if: always() && env.run_tests == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
         path: target/extent-reports/*
-
-    - name: Upload Failure Logs
-      if: failure() && env.run_tests == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: failure-logs
-        path: target/surefire-reports/*

@@ -25,13 +25,13 @@ public class Activity_Planner_Steps_Reports {
 
 	@Then("User tries to Generate the Report {string} {string} {string} {string}")
 	public void user_tries_to_generate_the_report(String string, String string2, String string3, String string4) {
-//		ap.parentchildwindow();
-//		ap.triestoadd(string, string2, string3, string4);
+		ap.parentchildwindow();
+		ap.triestoadd(string, string2, string3, string4);
 	}
 
 	@Then("Validate the Alerts and Report {string}")
 	public void validate_the_alerts_and_report(String string) {
-		//ap.alerts(string);
+		ap.alerts(string);
 	}
 
 }
