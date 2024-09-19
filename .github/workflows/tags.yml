@@ -29,6 +29,14 @@ jobs:
       run: |
         echo "Selected tag: ${{ github.event.inputs.tag }}"
 
+    - name: List Executable Jobs
+      run: |
+        echo "The following tests will be executed based on the selected tag:"
+        echo "Tag: ${{ github.event.inputs.tag }}"
+        # List feature files or scenarios associated with the selected tag
+        # Modify this according to how your project is organized and how you map tags to tests
+        grep -r "${{ github.event.inputs.tag }}" src/test/resources/features || echo "No feature files associated with the tag."
+
     - name: Clean the project
       run: mvn clean
 
@@ -44,15 +52,8 @@ jobs:
       run: ls -R target
 
     - name: Upload Extent Reports
-      if: success()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: extent-reports
         path: target/extent-reports/*
-
-    - name: Upload Failure Logs
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: failure-logs
-        path: target/surefire-reports/*
