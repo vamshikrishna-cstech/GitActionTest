@@ -33,9 +33,11 @@ jobs:
           echo "No changed feature files detected."
           echo "run_tests=false" >> $GITHUB_ENV
         else
+          # Convert newline-separated feature files into a single comma-separated string
+          FEATURES=$(echo "$CHANGED_FILES" | tr '\n' ',')
           echo "run_tests=true" >> $GITHUB_ENV
-          # Join all feature file paths into a single string separated by commas
-          echo "features=$(echo $CHANGED_FILES | tr '\n' ',')" >> $GITHUB_ENV
+          echo "features=$FEATURES" >> $GITHUB_ENV
+          echo "Features: $FEATURES"
         fi
       shell: /usr/bin/bash -e {0}
 
