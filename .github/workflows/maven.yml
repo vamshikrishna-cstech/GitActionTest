@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-  # Job to determine the changed feature files
   determine-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -29,18 +28,17 @@ jobs:
         echo "Changed files: $CHANGED_FILES"
         if [ -z "$CHANGED_FILES" ]; then
           echo "No changed feature files detected."
-          echo "::set-output name=run_tests::false"
+          echo "run_tests=false" >> $GITHUB_ENV
         else
-          echo "::set-output name=run_tests::true"
-          echo "::set-output name=features::$(echo $CHANGED_FILES | tr '\n' ',')"
+          echo "run_tests=true" >> $GITHUB_ENV
+          echo "features=$(echo $CHANGED_FILES | tr '\n' ',')" >> $GITHUB_ENV
         fi
       shell: /usr/bin/bash -e {0}
 
-  # Job to build the project
   build:
     runs-on: ubuntu-latest
-    needs: determine-changes  # This job runs only if the previous job succeeded
-    if: needs.determine-changes.outputs.run_tests == 'true'  # Only run if there are changed feature files
+    needs: determine-changes
+    if: env.run_tests == 'true'
 
     steps:
     - name: Checkout code
@@ -58,11 +56,10 @@ jobs:
     - name: Install dependencies
       run: mvn install -DskipTests
 
-  # Job to run tests
   run-tests:
     runs-on: ubuntu-latest
-    needs: build  # This job runs only after the build job succeeds
-    if: needs.determine-changes.outputs.run_tests == 'true'  # Only run if there are changes to feature files
+    needs: build
+    if: env.run_tests == 'true'
 
     steps:
     - name: Checkout code
@@ -77,14 +74,14 @@ jobs:
     - name: Debug Environment Variables
       run: |
         echo "Environment variables:"
-        echo "features: ${{ needs.determine-changes.outputs.features }}"
-        echo "run_tests: ${{ needs.determine-changes.outputs.run_tests }}"
+        echo "features: ${{ env.features }}"
+        echo "run_tests: ${{ env.run_tests }}"
 
     - name: Run Cucumber Tests
       run: |
         echo "Running tests for feature files:"
-        echo "${{ needs.determine-changes.outputs.features }}"
-        mvn test -Dfeatures="${{ needs.determine-changes.outputs.features }}"
+        echo "${{ env.features }}"
+        mvn test -Dfeatures="${{ env.features }}"
 
     - name: List target directory files
       run: ls -R target
