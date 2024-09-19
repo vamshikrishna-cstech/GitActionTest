@@ -37,7 +37,9 @@ jobs:
         # Find all feature files associated with the selected tag
         FEATURE_FILES=$(grep -rl "${{ github.event.inputs.tag }}" src/test/resources/features || echo "No feature files associated with the tag.")
         echo "$FEATURE_FILES"
-        echo "FEATURE_FILES=$FEATURE_FILES" >> $GITHUB_ENV
+        # Write the list of feature files to a temporary file
+        echo "$FEATURE_FILES" > feature_files.txt
+        echo "FEATURE_FILES_FILE=feature_files.txt" >> $GITHUB_ENV
 
     - name: Clean the project
       run: mvn clean
@@ -49,8 +51,9 @@ jobs:
       run: |
         echo "Running tests for tag: ${{ github.event.inputs.tag }}"
         echo "Feature files to be executed:"
-        echo "${{ env.FEATURE_FILES }}"
-        mvn test -Dcucumber.filter.tags="${{ github.event.inputs.tag }}"
+        cat ${{ env.FEATURE_FILES_FILE }}
+        # Pass the list of feature files to Maven as a system property
+        mvn test -Dcucumber.filter.tags="${{ github.event.inputs.tag }}" -Dfeatures.file=${{ env.FEATURE_FILES_FILE }}
 
     - name: List target directory files
       run: ls -R target
