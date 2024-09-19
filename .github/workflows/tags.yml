@@ -33,7 +33,7 @@ jobs:
       id: list_files
       run: |
         echo "Listing feature files associated with the selected tag:"
-		echo "Tag: ${{ github.event.inputs.tag }}"
+        echo "Tag: ${{ github.event.inputs.tag }}"
         # Find all feature files associated with the selected tag
         FEATURE_FILES=$(grep -rl "${{ github.event.inputs.tag }}" src/test/resources/features || echo "No feature files associated with the tag.")
         echo "$FEATURE_FILES"
@@ -47,7 +47,7 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-	    echo "Running tests for tag: ${{ github.event.inputs.tag }}"
+        echo "Running tests for tag: ${{ github.event.inputs.tag }}"
         echo "Feature files to be executed:"
         echo "${{ env.FEATURE_FILES }}"
         mvn test -Dcucumber.filter.tags="${{ github.event.inputs.tag }}"
