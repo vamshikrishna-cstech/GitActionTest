@@ -29,13 +29,14 @@ jobs:
       run: |
         echo "Selected tag: ${{ github.event.inputs.tag }}"
 
-    - name: List Executable Jobs
+    - name: List feature files for the selected tag
+      id: list_files
       run: |
-        echo "The following tests will be executed based on the selected tag:"
-        echo "Tag: ${{ github.event.inputs.tag }}"
-        # List feature files or scenarios associated with the selected tag
-        # Modify this according to how your project is organized and how you map tags to tests
-        grep -r "${{ github.event.inputs.tag }}" src/test/resources/features || echo "No feature files associated with the tag."
+        echo "Listing feature files associated with the selected tag:"
+        # Find all feature files associated with the selected tag
+        FEATURE_FILES=$(grep -rl "${{ github.event.inputs.tag }}" src/test/resources/features || echo "No feature files associated with the tag.")
+        echo "$FEATURE_FILES"
+        echo "FEATURE_FILES=$FEATURE_FILES" >> $GITHUB_ENV
 
     - name: Clean the project
       run: mvn clean
@@ -45,7 +46,8 @@ jobs:
 
     - name: Run Cucumber Tests
       run: |
-        echo "Running tests for tag: ${{ github.event.inputs.tag }}"
+        echo "Feature files to be executed:"
+        echo "${{ env.FEATURE_FILES }}"
         mvn test -Dcucumber.filter.tags="${{ github.event.inputs.tag }}"
 
     - name: List target directory files
