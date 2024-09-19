@@ -1,6 +1,5 @@
 package pages;
 
-import java.io.IOException;
 import java.time.Duration;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;

@@ -1,4 +1,4 @@
-name: Run Cucumber Tests Based on Tags
+name: Run Tests Based on Tags
 
 on:
   workflow_dispatch:

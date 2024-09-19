@@ -1,4 +1,4 @@
-name: Run Cucumber Tests
+name: PR checks
 
 on:
   push:
