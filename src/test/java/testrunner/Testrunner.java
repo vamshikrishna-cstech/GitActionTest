@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-    features = {"classpath:features"},  // Use classpath for features path
+    features = "classpath:features",  // Use classpath for features path
     glue = {"stepdefinition", "pages"},
     tags = "@smoketest or @regression",
     monochrome = true,
