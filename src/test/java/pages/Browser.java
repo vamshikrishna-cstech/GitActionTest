@@ -1,11 +1,16 @@
 package pages;
 
 import java.time.Duration;
+import java.util.Base64;
 
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import com.aventstack.extentreports.MediaEntityBuilder;
+import com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter;
+
 import org.openqa.selenium.OutputType;
 
 import io.cucumber.java.After;
@@ -49,10 +54,19 @@ public class Browser {
 	@After
 	public void tearDown(Scenario scenario) {
 		if (scenario.isFailed()) {
-			// Take a screenshot on failure
-			TakesScreenshot screenshot = (TakesScreenshot) driver;
-			byte[] screenshotBytes = screenshot.getScreenshotAs(OutputType.BYTES);
-			scenario.attach(screenshotBytes, "image/png", "screenshot");
+		    // Take a screenshot on failure
+		    TakesScreenshot screenshot = (TakesScreenshot) driver;
+		    byte[] screenshotBytes = screenshot.getScreenshotAs(OutputType.BYTES);
+
+		    // Encode the screenshot in Base64 format
+		    String base64Screenshot = Base64.getEncoder().encodeToString(screenshotBytes);
+
+		    // Attach the Base64 screenshot to the Cucumber report
+		    scenario.attach(screenshotBytes, "image/png", "screenshot");
+
+		    // Attach the screenshot to the Extent report using MediaEntityBuilder
+		    ExtentCucumberAdapter.getCurrentStep().fail("Test failed. Screenshot attached.",
+		        MediaEntityBuilder.createScreenCaptureFromBase64String(base64Screenshot).build());
 		}
 
 		// Quit the driver

@@ -11,7 +11,7 @@ public class Login_page {
 	@FindBy(css = "input[id='email']")
 	WebElement txt_username;
 
-	@FindBy(css = "input[id='password']")
+	@FindBy(css = "input[id='password1']")
 	WebElement txt_password;
 
 	@FindBy(xpath = "//div[contains(text(),'Login')]")

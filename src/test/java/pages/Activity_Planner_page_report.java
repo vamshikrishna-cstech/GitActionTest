@@ -1,5 +1,6 @@
 package pages;
 
+import java.util.Iterator;
 import java.util.Set;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -70,11 +71,11 @@ public class Activity_Planner_page_report {
 		
 		String pwid=driver.getWindowHandle();
 		Set<String> handle=driver.getWindowHandles();
-//		Iterator<String> it=handle.iterator();
-//		String pwid=it.next();
-//		String cwid=it.next();
+		Iterator<String> it=handle.iterator();
+		String pwid1=it.next();
+		String cwid=it.next();
 		for(String i:handle) {
-			if(!pwid.equals(i)) {
+			if(!pwid1.equals(i)) {
 				driver.switchTo().window(i);
 			}
 		}

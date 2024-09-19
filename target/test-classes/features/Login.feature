@@ -1,4 +1,5 @@
 Feature: Vcare Login Feature
+
   @regression
   Scenario Outline: validate vcare login scenario
     Given user launches the url

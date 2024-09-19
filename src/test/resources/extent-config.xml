@@ -1,16 +1,17 @@
 <configuration>
-    <theme>standard</theme> <!-- standard or dark -->
-    <encoding>utf-8</encoding>
-    <protocol>https</protocol>
-    <documentTitle>VCare Automation report</documentTitle>
-    <reportName>Automation Test Results</reportName>
-    <chartVisibilityOnOpen>true</chartVisibilityOnOpen>
-    <timelineEnabled>true</timelineEnabled>
-    <viewOrder>
-        <view>dashboard</view>
-        <view>test</view>
-        <view>category</view>
-        <view>exception</view>
-        <view>step</view>
-    </viewOrder>
+	<theme>standard</theme> <!-- standard or dark -->
+	<encoding>utf-8</encoding>
+	<protocol>https</protocol>
+	<documentTitle>VCare Automation report</documentTitle>
+	<reportName>Automation Test Results</reportName>
+	<chartVisibilityOnOpen>true</chartVisibilityOnOpen>
+	<timelineEnabled>true</timelineEnabled>
+	<enable-screenshot>always</enable-screenshot>
+	<viewOrder>
+		<view>dashboard</view>
+		<view>test</view>
+		<view>category</view>
+		<view>exception</view>
+		<view>step</view>
+	</viewOrder>
 </configuration>
